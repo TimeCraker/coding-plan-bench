@@ -166,7 +166,7 @@ export function Leaderboard({ entries, onRemove, onClear, highlightId }: Props) 
                           {metric === "tps" ? fmtTps(v) : fmtMs(v)}
                         </div>
                         <div className="text-[10px] text-muted mt-1">
-                          {metric === "tps" ? "tok/s ↑" : cfg.lowerBetter ? "越低 ↓" : ""}
+                          {metric === "tps" ? "tokens/s ↑" : cfg.lowerBetter ? "越低 ↓" : ""}
                         </div>
                       </div>
 

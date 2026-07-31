@@ -52,7 +52,7 @@ export function ResultCard({ result }: { result: BenchApiResponse }) {
         <Stat icon={<Zap className="w-4 h-4" />} label="TTFT" sub="首 token"
           value={fmtMs(result.ttft)} num={result.ttft} delay={0} />
         <Stat icon={<Activity className="w-4 h-4" />} label="TPS" sub="输出速度"
-          value={`${fmtTps(tps)}`} suffix=" tok/s" num={tps} decimals={1} delay={0.08} highlight />
+          value={`${fmtTps(tps)}`} suffix=" tokens/s" num={tps} decimals={1} delay={0.08} highlight />
         <Stat icon={<Timer className="w-4 h-4" />} label="Total" sub="总耗时"
           value={fmtMs(result.total)} num={result.total} delay={0.16} />
       </div>
