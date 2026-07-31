@@ -38,7 +38,7 @@ app.post("/api/bench", async (c) => {
     );
   }
   if (protocol !== "anthropic" && protocol !== "openai") {
-    return c.json({ error: "protocol 必须是 anthropic 或 openai" }, 400);
+    return c.json({ error: "协议类型无效，必须是 anthropic 或 openai" }, 400);
   }
 
   const input: BenchInput = {

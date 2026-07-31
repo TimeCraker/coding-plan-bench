@@ -17,7 +17,7 @@ export function SecurityBanner() {
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-2.5 flex items-center gap-2.5 text-[13px]">
             <Shield className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
             <span className="text-app flex-1">
-              API Key 仅用于本次测速，<span className="font-semibold">不存储不上传</span>，请求结束即丢弃
+              API Key 仅用于本次测速，<span className="font-semibold">不存储、不上传</span>，请求结束即丢弃
             </span>
             <a href="https://github.com/TimeCraker/coding-plan-bench/releases"
               target="_blank" rel="noreferrer"

@@ -78,7 +78,7 @@ async function benchDirect(p: BenchParams): Promise<BenchApiResponse> {
   });
   // 直调失败（CORS/网络）→ throw 触发回退代理
   if (!r.success) {
-    throw new Error(r.error || "直调失败");
+    throw new Error(r.error || "浏览器直连失败");
   }
   return {
     ttft: r.ttft,

@@ -71,9 +71,9 @@ export function BenchForm({ onRun, loading }: Props) {
       {/* 表单体 */}
       <div className="p-5 md:p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="名称" hint="榜单显示名">
+          <Field label="模型名" hint="榜单显示名">
             <input value={v.label} onChange={(e) => set("label", e.target.value)}
-              placeholder="给这个模型起个名，如 智谱 GLM-5.2" className="input" />
+              placeholder="如 智谱 GLM-5.2 / DeepSeek-V3 / Claude Sonnet" className="input" />
           </Field>
           <Field label="Model" hint="模型 ID">
             <input value={v.model} onChange={(e) => set("model", e.target.value)}
