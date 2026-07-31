@@ -132,7 +132,7 @@ export function Leaderboard({ entries, onRemove, onClear, highlightId }: Props) 
                     animate={{ opacity: 1, y: 0, boxShadow: isHi ? "0 0 0 2px var(--primary)" : "none" }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3, ease }}
-                    className="relative bg-surface-2 rounded-xl overflow-hidden group border border-app">
+                    className="relative bg-surface-2 rounded-xl overflow-hidden group border border-app hover:border-strong transition-colors">
                     {/* 背景进度条 */}
                     <motion.div
                       className="absolute left-0 top-0 bottom-0"

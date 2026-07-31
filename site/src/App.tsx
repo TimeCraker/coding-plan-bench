@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Sun, Moon, Github, Zap, Gauge, Shield } from "lucide-react";
 import type { LeaderboardEntry } from "../../engine/types";
 import { initTheme, toggleTheme, getTheme } from "./lib/theme";
@@ -77,8 +77,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-app relative">
-      {/* 背景网格装饰 */}
+      {/* 背景装饰：网格 + 流动光晕 */}
       <div className="fixed inset-0 grid-bg pointer-events-none opacity-40" aria-hidden="true" />
+      <motion.div
+        aria-hidden="true"
+        className="fixed -top-40 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)", opacity: 0.08 }}
+        animate={{ x: [0, 80, 0], y: [0, 40, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="fixed top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, var(--cta) 0%, transparent 70%)", opacity: 0.06 }}
+        animate={{ x: [0, -60, 0], y: [0, 60, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+      />
 
       <div className="relative">
         <SecurityBanner />
@@ -166,9 +180,12 @@ export default function App() {
               填入任意模型的 endpoint 和 API Key，流式采集 TTFT、TPS、Total，加入榜单对比排名。
             </motion.p>
 
-            {/* 特性标签 */}
+            {/* 特性标签 stagger */}
             <motion.div
-              variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } }}
+              variants={{
+                hidden: {},
+                show: { transition: { staggerChildren: 0.06, delayChildren: 0.4 } },
+              }}
               className="mt-7 flex flex-wrap gap-2.5"
             >
               {[
@@ -176,10 +193,15 @@ export default function App() {
                 { icon: <Gauge className="w-3.5 h-3.5" />, label: "三指标对比" },
                 { icon: <Shield className="w-3.5 h-3.5" />, label: "Key 不存储" },
               ].map((f) => (
-                <span key={f.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-app text-xs font-medium text-muted">
+                <motion.span
+                  key={f.label}
+                  variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
+                  whileHover={{ y: -2 }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-app text-xs font-medium text-muted cursor-default shadow-sm-card hover:shadow-md-card transition-shadow"
+                >
                   <span className="text-primary">{f.icon}</span>
                   {f.label}
-                </span>
+                </motion.span>
               ))}
             </motion.div>
           </motion.div>
@@ -188,7 +210,9 @@ export default function App() {
         {/* 主体 */}
         <main className="max-w-6xl mx-auto px-4 md:px-6 pb-20 space-y-6">
           <BenchForm onRun={handleRun} loading={loading} />
-          {result && <ResultCard result={result} />}
+          <AnimatePresence mode="wait">
+            {result && <ResultCard result={result} />}
+          </AnimatePresence>
           <Leaderboard
             entries={entries}
             onRemove={(id) => setEntries(removeEntry(id))}
