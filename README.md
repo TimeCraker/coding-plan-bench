@@ -1,63 +1,75 @@
 # Coding Plan Bench
 
-> GLM-5.2 订阅套餐测速台 · 对比智谱 / 火山方舟 / 百度千帆的响应速度与 token 输出效率
+> 模型测速台 · 填入任意模型的 endpoint + key，测 TTFT / TPS / Total，榜单对比排名
 
-同样问 GLM-5.2，哪家套餐的 token 出得快、首响应来得早？本工具用真实 API 流式调用采集 **TTFT（首 token 延迟）** 与 **TPS（token/秒）**，给出可复现的对比。
+在线用（网站）或下载本地版（key 不出门），两种方式都支持。
 
-## 被测对象
+## 两种使用方式
 
-| 厂商 | 套餐 | Endpoint | model |
-|------|------|----------|-------|
-| 智谱 | GLM Coding Plan | `open.bigmodel.cn/api/anthropic` | `glm-5.2` |
-| 火山方舟 | Ark Coding Plan | `ark.cn-beijing.volces.com/api/coding` | `glm-5.2[1m]` |
-| 百度千帆 | Qianfan Token Plan | `qianfan.baidubce.com/anthropic/tokenplan/personal` | `glm-5.2` |
+### 🌐 在线用
 
-三家均为 Anthropic 兼容协议，测速引擎用同一套请求代码，只切 endpoint/key/model，保证公平。
+打开网站 → 填表单 → 测速 → 看榜单。
 
-## 快速开始
+- 开了 CORS 的模型（智谱 / 火山 / OpenAI 等）浏览器直连，key 不经服务器
+- 没开 CORS 的（百度等）走 Cloudflare Worker 代理，key 用完即弃不存储
 
-```bash
-# 1. 装依赖
-npm install
+### 💻 下载本地版（更安全）
 
-# 2. 配 key
-cp .env.example .env
-#   填入 ZAI_CODING_CN_API_KEY / VOLCENGINE_CODING_API_KEY / QIANFAN_API_KEY
+去 [Releases](https://github.com/TimeCraker/coding-plan-bench/releases) 下载 Windows 包，双击运行。key 全程在你自己电脑，绝不出门。
 
-# 3. 跑测速（串行，约 1-2 分钟，消耗少量套餐额度）
-npm run bench
-
-# 4. 看结果
-npm run dev          # 本地前端展示
-#   或 npm run build && npm run preview
-```
-
-测速结果写入 `site/public/results.json`，前端读取后可视化。
-
-## 测速指标
+## 测什么
 
 | 指标 | 含义 |
 |------|------|
-| **TTFT** | 首 token 延迟（ms）—「响应快慢」|
-| **TPS** | tokens/秒 —「输出效率」|
-| **Total** | 总耗时（ms）|
-| **Success** | 成功率 |
+| **TTFT** | 首 token 延迟（ms）— 响应快慢 |
+| **TPS** | tokens/秒 — 输出效率 |
+| **Total** | 总耗时（ms）— 端到端，终极判据 |
 
-公平性：固定 6 条编码 prompt、`max_tokens=512`/`temperature=0`、串行不并发、每家每 prompt 跑 3 次取中位数、流式采集首 token。
+支持 Anthropic 兼容 和 OpenAI 兼容 两种协议，覆盖绝大多数模型厂商。
+
+## 本地开发
+
+```bash
+npm install
+cp .env.example .env   # 仅自部署后端时需要
+
+# 前端
+npm run dev
+
+# 后端 API（可选，浏览器直调失败时回退）
+npx tsx server/node.ts
+
+# 构建
+npm run build
+
+# Tauri 本地 App（需 Rust + MSVC Build Tools）
+npx tauri build
+```
 
 ## 架构
 
+一份 TypeScript 测速引擎，三个出口：
+
 ```
-bench/   Node 测速引擎（带 key 调 API，流式计时）→ results.json
-site/    Vite + React + TS + Tailwind v4 + Framer Motion 静态前端
+engine/ (同构 TS) ── 网站浏览器直调（CORS 开的）
+                 ── Cloudflare Worker / 自部署 Hono（CORS 兜底）
+                 ── Tauri 本地 App
 ```
 
-纯静态前端（部署 GitHub Pages），不接触 API key；测速由本地 Node 脚本完成。
+- **前端**：Vite + React 19 + TS + Tailwind v4 + Framer Motion
+- **后端**：Hono（同构 Cloudflare Worker + Node）
+- **本地 App**：Tauri 2（Windows）
+- **存储**：localStorage 榜单（不存 key）
 
-## 技术栈
+## 安全
 
-Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · Framer Motion · Lucide · 自绘 SVG 图表
+- API Key 仅用于本次测速，不存储不上传，请求结束即丢弃
+- localStorage 只存指标 + endpoint + model，绝不存 key
+- 本地版 key 全程在用户电脑
+- Worker / 服务器代码开源可审计
 
-## 设计
+## 部署
 
-亮色仪表盘，参照 `site/design-system/MASTER.md`（由 ui-ux-pro-max skill 生成）。
+- 前端：GitHub Pages（自动部署，push main 触发）
+- Windows 包：GitHub Actions 构建发 Releases（手动 / release 触发）
+- Worker：`npx wrangler deploy`（可选）
