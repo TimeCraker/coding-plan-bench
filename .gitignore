@@ -25,3 +25,4 @@ Thumbs.db
 # Vite cache
 .vite/
 .shots/
+src-tauri/target/
