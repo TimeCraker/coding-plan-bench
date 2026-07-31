@@ -1,39 +1,54 @@
 @import "tailwindcss";
 
-/* ── 主题变量：亮色（默认）+ 暗色 ── */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
+/* ── 高级视觉系统：亮/暗双主题 ── */
 :root {
-  /* 亮色（默认）*/
-  --bg: #f8fafc;
+  --bg: #fafbfc;
+  --bg-grad: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.08), transparent),
+             radial-gradient(ellipse 60% 40% at 90% 10%, rgba(249, 115, 22, 0.05), transparent);
   --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --border: #e2e8f0;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-2: #f4f6f9;
+  --text: #0a0e1a;
+  --text-muted: #5a6478;
+  --border: #e8ecf2;
+  --border-strong: #d1d8e3;
   --primary: #2563eb;
-  --primary-soft: #dbeafe;
+  --primary-hover: #1d4ed8;
+  --primary-soft: #eff4ff;
   --cta: #f97316;
-  --shadow: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.06);
-  --shadow-lg: 0 10px 30px rgb(15 23 42 / 0.10);
+  --success: #10b981;
+  --shadow-sm: 0 1px 2px rgba(10, 14, 26, 0.04), 0 1px 3px rgba(10, 14, 26, 0.06);
+  --shadow-md: 0 4px 12px rgba(10, 14, 26, 0.06), 0 2px 4px rgba(10, 14, 26, 0.04);
+  --shadow-lg: 0 20px 50px -12px rgba(10, 14, 26, 0.12), 0 8px 24px -8px rgba(10, 14, 26, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(37, 99, 235, 0.1), 0 8px 30px -6px rgba(37, 99, 235, 0.18);
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg: #0b1120;
-  --surface: #131c31;
-  --surface-2: #1e293b;
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
-  --border: #1e293b;
-  --primary: #3b82f6;
-  --primary-soft: #1e3a5f;
-  --cta: #f97316;
-  --shadow: 0 1px 3px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 30px rgb(0 0 0 / 0.5);
+  --bg: #07090f;
+  --bg-grad: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59, 130, 246, 0.12), transparent),
+             radial-gradient(ellipse 60% 40% at 90% 10%, rgba(249, 115, 22, 0.06), transparent);
+  --surface: #0f131c;
+  --surface-glass: rgba(15, 19, 28, 0.72);
+  --surface-2: #161b26;
+  --text: #e8ecf4;
+  --text-muted: #8b94a8;
+  --border: #1e2533;
+  --border-strong: #2a3344;
+  --primary: #4f8ef7;
+  --primary-hover: #6ba0fa;
+  --primary-soft: #131c2e;
+  --cta: #fb923c;
+  --success: #34d399;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 1px rgba(79, 142, 247, 0.15), 0 8px 30px -6px rgba(79, 142, 247, 0.25);
   color-scheme: dark;
 }
 
@@ -44,17 +59,29 @@
   }
   body {
     background-color: var(--bg);
+    background-image: var(--bg-grad);
+    background-attachment: fixed;
     color: var(--text);
     font-family: var(--font-sans);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    letter-spacing: -0.01em;
   }
   .tabular {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
+  ::selection {
+    background: var(--primary);
+    color: #fff;
+  }
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 }
 
-/* ── Reduced motion (motion-principles 铁律) ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -64,17 +91,36 @@
   }
 }
 
-/* 工具类（Tailwind v4 用 @theme 映射，这里补几个语义类） */
 @layer utilities {
   .bg-app { background-color: var(--bg); }
   .bg-surface { background-color: var(--surface); }
   .bg-surface-2 { background-color: var(--surface-2); }
+  .bg-glass { background-color: var(--surface-glass); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); }
   .text-app { color: var(--text); }
   .text-muted { color: var(--text-muted); }
   .border-app { border-color: var(--border); }
+  .border-strong { border-color: var(--border-strong); }
   .text-primary { color: var(--primary); }
   .bg-primary { background-color: var(--primary); }
   .bg-primary-soft { background-color: var(--primary-soft); }
-  .shadow-card { box-shadow: var(--shadow); }
-  .shadow-card-lg { box-shadow: var(--shadow-lg); }
+  .text-cta { color: var(--cta); }
+  .text-success { color: var(--success); }
+  .shadow-sm-card { box-shadow: var(--shadow-sm); }
+  .shadow-md-card { box-shadow: var(--shadow-md); }
+  .shadow-lg-card { box-shadow: var(--shadow-lg); }
+  .shadow-glow-card { box-shadow: var(--shadow-glow); }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--cta) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 70%);
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 70%);
+  }
 }
