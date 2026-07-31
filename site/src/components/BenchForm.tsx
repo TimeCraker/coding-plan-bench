@@ -94,7 +94,7 @@ export function BenchForm({ onRun, loading }: Props) {
             <div className="relative">
               <input type={showKey ? "text" : "password"} value={v.apiKey}
                 onChange={(e) => set("apiKey", e.target.value)}
-                placeholder="sk-... / ark-..." required className="input pr-10" autoComplete="off" />
+                placeholder="你的 API Key" required className="input pr-10" autoComplete="off" />
               <button type="button" onClick={() => setShowKey((s) => !s)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-app transition-colors cursor-pointer"
                 aria-label={showKey ? "隐藏" : "显示"}>
@@ -102,7 +102,7 @@ export function BenchForm({ onRun, loading }: Props) {
               </button>
             </div>
           </Field>
-          <Field label="取样" hint="取中位数">
+          <Field label="取样" hint="多次取中位数">
             <select value={v.samples} onChange={(e) => set("samples", Number(e.target.value))}
               className="input cursor-pointer">
               <option value={1}>1 次</option>

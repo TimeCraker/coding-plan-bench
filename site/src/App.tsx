@@ -163,7 +163,7 @@ export default function App() {
               variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease } } }}
               className="mt-5 text-base md:text-lg text-muted max-w-xl leading-relaxed"
             >
-              填入任意模型的 endpoint 和 key，流式采集 TTFT、TPS、Total，加入榜单对比排名。
+              填入任意模型的 endpoint 和 API Key，流式采集 TTFT、TPS、Total，加入榜单对比排名。
             </motion.p>
 
             {/* 特性标签 */}
@@ -196,7 +196,7 @@ export default function App() {
             highlightId={highlightId}
           />
           <footer className="text-center text-xs text-muted pt-6 pb-2">
-            测速受网络影响，反映本机当前真实表现 · Key 不存储不上传
+            测速受网络影响，反映本机当前真实表现
           </footer>
         </main>
       </div>
