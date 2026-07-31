@@ -76,6 +76,10 @@ async function benchDirect(p: BenchParams): Promise<BenchApiResponse> {
     maxTokens: p.maxTokens,
     timeoutMs: 90_000,
   });
+  // 直调失败（CORS/网络）→ throw 触发回退代理
+  if (!r.success) {
+    throw new Error(r.error || "直调失败");
+  }
   return {
     ttft: r.ttft,
     total: r.total,
