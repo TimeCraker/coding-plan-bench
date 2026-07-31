@@ -24,3 +24,4 @@ Thumbs.db
 
 # Vite cache
 .vite/
+.shots/
