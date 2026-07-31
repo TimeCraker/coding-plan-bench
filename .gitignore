@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+site/dist/
+
+# Env / keys (never commit)
+.env
+.env.local
+.env.*.local
+
+# Bench output (local run; CI commits a fresh copy)
+# Keep results.json tracked so the deployed site has data,
+# but ignore history archive to avoid bloat.
+site/public/results.history.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Vite cache
+.vite/

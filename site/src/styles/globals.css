@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* ── Design tokens (ui-ux-pro-max design-system, light dashboard) ── */
+@theme {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-primary: #2563eb;
+  --color-primary-soft: #dbeafe;
+  --color-cta: #f97316;
+
+  /* 三家厂商品牌数据色 */
+  --color-zhipu: #6366f1;
+  --color-volcengine: #f97316;
+  --color-baidu: #3b82f6;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
+  /* 数字 / 代码用等宽，tabular-nums 防跳动 */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Reduced motion (motion-principles 铁律) ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

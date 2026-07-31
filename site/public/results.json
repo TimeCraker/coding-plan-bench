@@ -1,0 +1,688 @@
+{
+  "meta": {
+    "ranAt": "2026-07-31T07:31:06.015Z",
+    "runner": "local",
+    "node": "v24.15.0",
+    "samples": 3
+  },
+  "providers": [
+    {
+      "id": "zhipu",
+      "name": "智谱 GLM Coding Plan",
+      "endpoint": "https://open.bigmodel.cn/api/anthropic",
+      "model": "glm-5.2",
+      "envVar": "ZAI_CODING_CN_API_KEY",
+      "color": "#6366F1"
+    },
+    {
+      "id": "volcengine",
+      "name": "火山方舟 Ark Coding Plan",
+      "endpoint": "https://ark.cn-beijing.volces.com/api/coding",
+      "model": "glm-5.2[1m]",
+      "envVar": "VOLCENGINE_CODING_API_KEY",
+      "color": "#EA580C"
+    },
+    {
+      "id": "baidu",
+      "name": "百度千帆 Qianfan Token Plan",
+      "endpoint": "https://qianfan.baidubce.com/anthropic/tokenplan/personal",
+      "model": "glm-5.2",
+      "envVar": "QIANFAN_API_KEY",
+      "color": "#3B82F6"
+    }
+  ],
+  "prompts": [
+    {
+      "id": "code-gen-1",
+      "label": "实现快速排序",
+      "category": "code-gen"
+    },
+    {
+      "id": "code-gen-2",
+      "label": "防抖节流",
+      "category": "code-gen"
+    },
+    {
+      "id": "code-explain-1",
+      "label": "解释闭包",
+      "category": "code-explain"
+    },
+    {
+      "id": "code-explain-2",
+      "label": "解释事件循环",
+      "category": "code-explain"
+    },
+    {
+      "id": "complete-1",
+      "label": "补全 React 组件",
+      "category": "complete"
+    },
+    {
+      "id": "complete-2",
+      "label": "补全 SQL 查询",
+      "category": "complete"
+    }
+  ],
+  "samples": [
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-1",
+      "run": 1,
+      "ttft": 949,
+      "tps": 104.1,
+      "total": 3350,
+      "outputTokens": 250,
+      "inputTokens": 36,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-1",
+      "run": 2,
+      "ttft": 1718,
+      "tps": 82.3,
+      "total": 3844,
+      "outputTokens": 175,
+      "inputTokens": 36,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-1",
+      "run": 3,
+      "ttft": 1921,
+      "tps": 84.1,
+      "total": 4003,
+      "outputTokens": 175,
+      "inputTokens": 36,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-2",
+      "run": 1,
+      "ttft": 680,
+      "tps": 81.1,
+      "total": 6993,
+      "outputTokens": 512,
+      "inputTokens": 24,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-2",
+      "run": 2,
+      "ttft": 893,
+      "tps": 75.8,
+      "total": 7647,
+      "outputTokens": 512,
+      "inputTokens": 24,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-gen-2",
+      "run": 3,
+      "ttft": 1718,
+      "tps": 101.1,
+      "total": 6784,
+      "outputTokens": 512,
+      "inputTokens": 24,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-1",
+      "run": 1,
+      "ttft": 2297,
+      "tps": 75.7,
+      "total": 5505,
+      "outputTokens": 243,
+      "inputTokens": 28,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-1",
+      "run": 2,
+      "ttft": 1382,
+      "tps": 65.8,
+      "total": 6157,
+      "outputTokens": 314,
+      "inputTokens": 28,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-1",
+      "run": 3,
+      "ttft": 1754,
+      "tps": 95,
+      "total": 4805,
+      "outputTokens": 290,
+      "inputTokens": 28,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-2",
+      "run": 1,
+      "ttft": 4268,
+      "tps": 57,
+      "total": 7235,
+      "outputTokens": 169,
+      "inputTokens": 25,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-2",
+      "run": 2,
+      "ttft": 801,
+      "tps": 66.8,
+      "total": 3345,
+      "outputTokens": 170,
+      "inputTokens": 25,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "code-explain-2",
+      "run": 3,
+      "ttft": 981,
+      "tps": 75.4,
+      "total": 3223,
+      "outputTokens": 169,
+      "inputTokens": 25,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-1",
+      "run": 1,
+      "ttft": 738,
+      "tps": 109.1,
+      "total": 3148,
+      "outputTokens": 263,
+      "inputTokens": 40,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-1",
+      "run": 2,
+      "ttft": 1741,
+      "tps": 182.2,
+      "total": 2668,
+      "outputTokens": 169,
+      "inputTokens": 40,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-1",
+      "run": 3,
+      "ttft": 836,
+      "tps": 108,
+      "total": 2521,
+      "outputTokens": 182,
+      "inputTokens": 40,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-2",
+      "run": 1,
+      "ttft": 892,
+      "tps": 74.8,
+      "total": 1762,
+      "outputTokens": 65,
+      "inputTokens": 37,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-2",
+      "run": 2,
+      "ttft": 1450,
+      "tps": 211.7,
+      "total": 1780,
+      "outputTokens": 70,
+      "inputTokens": 37,
+      "success": true
+    },
+    {
+      "provider": "zhipu",
+      "promptId": "complete-2",
+      "run": 3,
+      "ttft": 5250,
+      "tps": 868.8,
+      "total": 5315,
+      "outputTokens": 57,
+      "inputTokens": 37,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-1",
+      "run": 1,
+      "ttft": 6031,
+      "tps": 74.6,
+      "total": 12892,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-1",
+      "run": 2,
+      "ttft": 9830,
+      "tps": 62.2,
+      "total": 18068,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-1",
+      "run": 3,
+      "ttft": 1994,
+      "tps": 59.9,
+      "total": 10544,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-2",
+      "run": 1,
+      "ttft": 2505,
+      "tps": 65.4,
+      "total": 10333,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-2",
+      "run": 2,
+      "ttft": 3858,
+      "tps": 80.5,
+      "total": 10217,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-gen-2",
+      "run": 3,
+      "ttft": 5788,
+      "tps": 69.4,
+      "total": 13165,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-1",
+      "run": 1,
+      "ttft": 3823,
+      "tps": 64.6,
+      "total": 11749,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-1",
+      "run": 2,
+      "ttft": 1461,
+      "tps": 65.7,
+      "total": 9251,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-1",
+      "run": 3,
+      "ttft": 2285,
+      "tps": 87.1,
+      "total": 8161,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-2",
+      "run": 1,
+      "ttft": 3501,
+      "tps": 73.2,
+      "total": 10492,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-2",
+      "run": 2,
+      "ttft": 1851,
+      "tps": 66.4,
+      "total": 9558,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "code-explain-2",
+      "run": 3,
+      "ttft": 1744,
+      "tps": 76.5,
+      "total": 8436,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-1",
+      "run": 1,
+      "ttft": 4022,
+      "tps": 51.8,
+      "total": 13903,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-1",
+      "run": 2,
+      "ttft": 1939,
+      "tps": 54.5,
+      "total": 11337,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-1",
+      "run": 3,
+      "ttft": 2092,
+      "tps": 56.2,
+      "total": 11201,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-2",
+      "run": 1,
+      "ttft": 2262,
+      "tps": 76.3,
+      "total": 8974,
+      "outputTokens": 512,
+      "inputTokens": 43,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-2",
+      "run": 2,
+      "ttft": 1722,
+      "tps": 70.7,
+      "total": 8967,
+      "outputTokens": 512,
+      "inputTokens": 43,
+      "success": true
+    },
+    {
+      "provider": "volcengine",
+      "promptId": "complete-2",
+      "run": 3,
+      "ttft": 3536,
+      "tps": 83.1,
+      "total": 9093,
+      "outputTokens": 462,
+      "inputTokens": 43,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-1",
+      "run": 1,
+      "ttft": 798,
+      "tps": 86,
+      "total": 6748,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-1",
+      "run": 2,
+      "ttft": 748,
+      "tps": 83.1,
+      "total": 6913,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-1",
+      "run": 3,
+      "ttft": 845,
+      "tps": 80.4,
+      "total": 7214,
+      "outputTokens": 512,
+      "inputTokens": 42,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-2",
+      "run": 1,
+      "ttft": 751,
+      "tps": 67.8,
+      "total": 8302,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-2",
+      "run": 2,
+      "ttft": 1650,
+      "tps": 74.1,
+      "total": 8558,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-gen-2",
+      "run": 3,
+      "ttft": 820,
+      "tps": 78.5,
+      "total": 7343,
+      "outputTokens": 512,
+      "inputTokens": 30,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-1",
+      "run": 1,
+      "ttft": 951,
+      "tps": 77.9,
+      "total": 7525,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-1",
+      "run": 2,
+      "ttft": 1035,
+      "tps": 71.7,
+      "total": 8172,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-1",
+      "run": 3,
+      "ttft": 833,
+      "tps": 76.2,
+      "total": 7548,
+      "outputTokens": 512,
+      "inputTokens": 34,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-2",
+      "run": 1,
+      "ttft": 1009,
+      "tps": 71.2,
+      "total": 8198,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-2",
+      "run": 2,
+      "ttft": 1109,
+      "tps": 70,
+      "total": 8424,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "code-explain-2",
+      "run": 3,
+      "ttft": 866,
+      "tps": 70.6,
+      "total": 8121,
+      "outputTokens": 512,
+      "inputTokens": 31,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-1",
+      "run": 1,
+      "ttft": 811,
+      "tps": 71.2,
+      "total": 8001,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-1",
+      "run": 2,
+      "ttft": 548,
+      "tps": 68.9,
+      "total": 7975,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-1",
+      "run": 3,
+      "ttft": 644,
+      "tps": 63.8,
+      "total": 8674,
+      "outputTokens": 512,
+      "inputTokens": 46,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-2",
+      "run": 1,
+      "ttft": 669,
+      "tps": 70.4,
+      "total": 7417,
+      "outputTokens": 475,
+      "inputTokens": 43,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-2",
+      "run": 2,
+      "ttft": 848,
+      "tps": 74.4,
+      "total": 6587,
+      "outputTokens": 427,
+      "inputTokens": 43,
+      "success": true
+    },
+    {
+      "provider": "baidu",
+      "promptId": "complete-2",
+      "run": 3,
+      "ttft": 834,
+      "tps": 73.4,
+      "total": 6693,
+      "outputTokens": 430,
+      "inputTokens": 43,
+      "success": true
+    }
+  ],
+  "summary": [
+    {
+      "provider": "zhipu",
+      "ttftMedian": 1416,
+      "tpsMedian": 83,
+      "totalMedian": 3924,
+      "wins": 6,
+      "successRate": 100
+    },
+    {
+      "provider": "volcengine",
+      "ttftMedian": 2395,
+      "tpsMedian": 68,
+      "totalMedian": 10413,
+      "wins": 0,
+      "successRate": 100
+    },
+    {
+      "provider": "baidu",
+      "ttftMedian": 834,
+      "tpsMedian": 73,
+      "totalMedian": 7762,
+      "wins": 0,
+      "successRate": 100
+    }
+  ]
+}
