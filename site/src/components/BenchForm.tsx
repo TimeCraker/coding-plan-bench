@@ -73,19 +73,19 @@ export function BenchForm({ onRun, loading }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="名称" hint="榜单显示名">
             <input value={v.label} onChange={(e) => set("label", e.target.value)}
-              placeholder="智谱 GLM-5.2" className="input" />
+              placeholder="给这个模型起个名，如 智谱 GLM-5.2" className="input" />
           </Field>
           <Field label="Model" hint="模型 ID">
             <input value={v.model} onChange={(e) => set("model", e.target.value)}
-              placeholder="glm-5.2" required className="input" />
+              placeholder="模型 ID，如 glm-5.2" required className="input" />
           </Field>
         </div>
 
         <Field label="Endpoint URL" hint="API 基础地址">
           <input value={v.endpoint} onChange={(e) => set("endpoint", e.target.value)}
             placeholder={v.protocol === "anthropic"
-              ? "https://open.bigmodel.cn/api/anthropic"
-              : "https://api.openai.com/v1"}
+              ? "如 https://open.bigmodel.cn/api/anthropic"
+              : "如 https://api.openai.com/v1"}
             required className="input" />
         </Field>
 
