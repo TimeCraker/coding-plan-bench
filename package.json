@@ -5,10 +5,11 @@
   "description": "GLM-5.2 订阅套餐测速台 / Benchmark GLM-5.2 across Zhipu/Volcengine/Baidu coding plans",
   "type": "module",
   "scripts": {
-    "bench": "tsx bench/run.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "tsx server/node.ts",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",
