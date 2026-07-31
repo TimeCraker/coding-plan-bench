@@ -1,0 +1,7 @@
+name = "coding-plan-bench-api"
+main = "src/worker.ts"
+compatibility_date = "2024-12-01"
+
+# 开发: npx wrangler dev
+# 部署: npx wrangler deploy
+# 免费额度 10万请求/天，测速场景绰绰有余

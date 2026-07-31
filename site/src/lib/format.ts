@@ -1,4 +1,4 @@
-// 数字 / 时间格式化工具
+// 数字 / 时间格式化 + count-up 缓动
 
 export function fmtMs(ms: number): string {
   if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
@@ -11,8 +11,7 @@ export function fmtTps(tps: number): string {
 
 export function fmtTime(iso: string): string {
   try {
-    const d = new Date(iso);
-    return d.toLocaleString("zh-CN", {
+    return new Date(iso).toLocaleString("zh-CN", {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
@@ -23,7 +22,6 @@ export function fmtTime(iso: string): string {
   }
 }
 
-/** count-up 动效用的缓动 */
 export function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }

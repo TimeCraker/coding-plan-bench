@@ -1,23 +1,40 @@
 @import "tailwindcss";
 
-/* ── Design tokens (ui-ux-pro-max design-system, light dashboard) ── */
+/* ── 主题变量：亮色（默认）+ 暗色 ── */
 @theme {
-  --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-text: #1e293b;
-  --color-muted: #64748b;
-  --color-border: #e2e8f0;
-  --color-primary: #2563eb;
-  --color-primary-soft: #dbeafe;
-  --color-cta: #f97316;
-
-  /* 三家厂商品牌数据色 */
-  --color-zhipu: #6366f1;
-  --color-volcengine: #f97316;
-  --color-baidu: #3b82f6;
-
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root {
+  /* 亮色（默认）*/
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --primary-soft: #dbeafe;
+  --cta: #f97316;
+  --shadow: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 10px 30px rgb(15 23 42 / 0.10);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1120;
+  --surface: #131c31;
+  --surface-2: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
+  --primary: #3b82f6;
+  --primary-soft: #1e3a5f;
+  --cta: #f97316;
+  --shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 30px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -26,11 +43,11 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    background-color: var(--color-bg);
-    color: var(--color-text);
+    background-color: var(--bg);
+    color: var(--text);
     font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
-  /* 数字 / 代码用等宽，tabular-nums 防跳动 */
   .tabular {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -45,4 +62,19 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* 工具类（Tailwind v4 用 @theme 映射，这里补几个语义类） */
+@layer utilities {
+  .bg-app { background-color: var(--bg); }
+  .bg-surface { background-color: var(--surface); }
+  .bg-surface-2 { background-color: var(--surface-2); }
+  .text-app { color: var(--text); }
+  .text-muted { color: var(--text-muted); }
+  .border-app { border-color: var(--border); }
+  .text-primary { color: var(--primary); }
+  .bg-primary { background-color: var(--primary); }
+  .bg-primary-soft { background-color: var(--primary-soft); }
+  .shadow-card { box-shadow: var(--shadow); }
+  .shadow-card-lg { box-shadow: var(--shadow-lg); }
 }
