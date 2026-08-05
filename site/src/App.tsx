@@ -15,6 +15,7 @@ import { SecurityBanner } from "./components/SecurityBanner";
 import { BenchForm, type FormValues } from "./components/BenchForm";
 import { ResultCard } from "./components/ResultCard";
 import { Leaderboard } from "./components/Leaderboard";
+import { GlobalLeaderboard } from "./components/GlobalLeaderboard";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -219,8 +220,9 @@ export default function App() {
             onClear={() => { clearLeaderboard(); setEntries([]); }}
             highlightId={highlightId}
           />
+          <GlobalLeaderboard />
           <footer className="text-center text-xs text-muted pt-6 pb-2">
-            测速受网络影响，反映本机当前真实表现
+            测速受网络影响，反映本机当前真实表现 · 能力榜为行业参考数据
           </footer>
         </main>
       </div>
