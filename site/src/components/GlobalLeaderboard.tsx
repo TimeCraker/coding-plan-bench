@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Brain, Coins, CreditCard, Crown, Trophy, Sparkles, Info } from "lucide-react";
+import { Globe, Brain, Coins, CreditCard, Target, Crown, Trophy, Sparkles, Info } from "lucide-react";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-type Tab = "intelligence" | "value" | "plans";
+type Tab = "intelligence" | "value" | "plans" | "agent";
 
 const TABS: { id: Tab; label: string; short: string; icon: React.ReactNode }[] = [
   { id: "intelligence", label: "综合智能", short: "智能", icon: <Brain className="w-3.5 h-3.5" /> },
+  { id: "agent", label: "Agent 能力", short: "Agent", icon: <Target className="w-3.5 h-3.5" /> },
   { id: "value", label: "性价比", short: "性价比", icon: <Coins className="w-3.5 h-3.5" /> },
   { id: "plans", label: "订阅制 / Plan", short: "订阅", icon: <CreditCard className="w-3.5 h-3.5" /> },
 ];
@@ -32,6 +33,7 @@ interface BoardData {
 interface LbData {
   meta: { updatedAt: string; sources: string[]; note: string };
   intelligence: BoardData;
+  agent: BoardData;
   value: BoardData;
   plans: BoardData;
 }
@@ -126,8 +128,7 @@ function Skeleton() {
 }
 
 export function GlobalLeaderboard() {
-  const [tab, setTab] = useState<Tab>("intelligence");
-  const [data, setData] = useState<LbData | null>(null);
+  const [tab, setTab] = useState<Tab>("intelligence");  const [data, setData] = useState<LbData | null>(null);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -155,6 +156,23 @@ export function GlobalLeaderboard() {
         ),
         pct: (score / max) * 100,
         sub: `${item.tier} 档`,
+      };
+    }
+    if (tab === "agent") {
+      // GDPval-AA v2 Elo，分数存 score 字段
+      const max = 1862;
+      const elo = item.score as number;
+      return {
+        main: (
+          <>
+            <div className="tabular text-xl font-bold leading-none" style={{ color: item.rank === 1 ? "var(--primary)" : "var(--text)" }}>
+              {elo}
+            </div>
+            <div className="text-[10px] text-muted mt-1">Elo</div>
+          </>
+        ),
+        pct: (elo / max) * 100,
+        note: item.note as string | undefined,
       };
     }
     if (tab === "value") {
