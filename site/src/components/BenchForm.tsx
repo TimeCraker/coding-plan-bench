@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, Loader2, Eye, EyeOff, Terminal } from "lucide-react";
+import { Play, Loader2, Eye, EyeOff, Terminal, Zap } from "lucide-react";
 import type { Protocol } from "../../../engine/types";
+import { MODEL_MATRIX } from "../../../engine/models";
 
 export interface FormValues {
   label: string;
@@ -70,6 +71,41 @@ export function BenchForm({ onRun, loading }: Props) {
 
       {/* 表单体 */}
       <div className="p-5 md:p-6 space-y-4">
+        {/* 模型矩阵快选：点击预填 endpoint/model/协议（key 永不预填） */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted mr-1">
+            <Zap className="w-3 h-3" />快选
+          </span>
+          {MODEL_MATRIX.map((m) => {
+            const active = v.model === m.model && v.endpoint === m.endpoint;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                title={m.note ?? `预填 ${m.model}`}
+                onClick={() =>
+                  setV((p) => ({
+                    ...p,
+                    label: m.name,
+                    endpoint: m.endpoint,
+                    model: m.model,
+                    protocol: m.protocol,
+                  }))
+                }
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors cursor-pointer hover:border-primary"
+                style={{
+                  borderColor: active ? m.color : "var(--border)",
+                  color: active ? m.color : "var(--text-muted)",
+                  background: active ? `${m.color}14` : "transparent",
+                }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: m.color }} />
+                {m.name}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="模型名" hint="榜单显示名">
             <input value={v.label} onChange={(e) => set("label", e.target.value)}

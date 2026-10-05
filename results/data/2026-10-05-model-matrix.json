@@ -1,0 +1,367 @@
+{
+  "meta": {
+    "ranAt": "2026-10-05T08:07:39.753Z",
+    "runner": "local",
+    "node": "v24.16.0",
+    "samples": 2,
+    "params": {
+      "maxTokens": 4096,
+      "temperature": 0,
+      "samples": 2,
+      "timeoutMs": 300000,
+      "delayMs": 2000,
+      "retryDelayMs": 5000
+    }
+  },
+  "models": [
+    {
+      "id": "zhipu-glm53",
+      "name": "智谱 GLM-5.3",
+      "endpoint": "https://open.bigmodel.cn/api/anthropic",
+      "model": "glm-5.3",
+      "protocol": "anthropic",
+      "envVar": "ZHIPU_API_KEY",
+      "color": "#6366F1",
+      "era": "glm-5.3"
+    },
+    {
+      "id": "zhipu-glm53-flash",
+      "name": "智谱 GLM-5.3-Flash",
+      "endpoint": "https://open.bigmodel.cn/api/anthropic",
+      "model": "glm-5.3-flash",
+      "protocol": "anthropic",
+      "envVar": "ZHIPU_API_KEY",
+      "color": "#10B981",
+      "era": "glm-5.3"
+    }
+  ],
+  "cases": [
+    {
+      "id": "gen-lru",
+      "label": "生成 LRU 缓存",
+      "category": "gen",
+      "level": "mid",
+      "rubric": [
+        "基于 Map + delete/set 技巧实现 O(1)，而非数组遍历找 LRU",
+        "get 命中后正确提升新鲜度（delete 再 set）",
+        "put 超容量先淘汰 Map 第一个键（最旧）",
+        "类型签名完整（泛型 K/V 或等价）"
+      ]
+    },
+    {
+      "id": "gen-emitter",
+      "label": "生成类型安全事件总线",
+      "category": "gen",
+      "level": "hard",
+      "rubric": [
+        "泛型约束正确（Events extends Record<string, unknown[]> 等价形式均可）",
+        "on/emit 的 K 联动推导正确（fn: (...args: Events[K]) => void）",
+        "off 支持按函数引用移除且不炸未注册的",
+        "用法示例能通过严格模式类型检查（概念上）"
+      ]
+    },
+    {
+      "id": "fix-intervals",
+      "label": "改错 合并区间",
+      "category": "fix",
+      "level": "mid",
+      "rubric": [
+        "找出 bug①：cur[0] < last[1] 应为 <=，相邻区间 [1,2],[2,3] 该合却没合",
+        "找出 bug②：last[1] = cur[1] 应为 Math.max(last[1], cur[1])，嵌套区间 [1,10],[2,3] 会把右端点改小",
+        "两个 bug 都给出触发场景（不只是改对代码）",
+        "修正代码完整可运行、无新引入问题"
+      ]
+    },
+    {
+      "id": "explain-eventloop",
+      "label": "解释 事件循环输出",
+      "category": "explain",
+      "level": "mid",
+      "rubric": [
+        "输出顺序完全正确：1 6 8 3 5 7 2 4",
+        "解释到位：同步代码先跑完，微任务队列（then/queueMicrotask/await 续体）当轮清空后才跑宏任务",
+        "能指出 4 排在 2 之后的原因（3 里注册的 setTimeout 排到 2 后面）"
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-lru",
+      "run": 1,
+      "ttft": 1125,
+      "tps": 100.9,
+      "total": 8115,
+      "outputTokens": 705,
+      "inputTokens": 92,
+      "thinkingMs": 6931,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-lru",
+      "run": 2,
+      "ttft": 991,
+      "tps": 99,
+      "total": 7517,
+      "outputTokens": 646,
+      "inputTokens": 92,
+      "thinkingMs": 6510,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-emitter",
+      "run": 1,
+      "ttft": 2249,
+      "tps": 88.5,
+      "total": 20333,
+      "outputTokens": 1600,
+      "inputTokens": 98,
+      "thinkingMs": 18031,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-emitter",
+      "run": 2,
+      "ttft": 6267,
+      "tps": 79.3,
+      "total": 40879,
+      "outputTokens": 2744,
+      "inputTokens": 98,
+      "thinkingMs": 34599,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "fix-intervals",
+      "run": 1,
+      "ttft": 1045,
+      "tps": 93.7,
+      "total": 45795,
+      "outputTokens": 4191,
+      "inputTokens": 166,
+      "thinkingMs": 44750,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "fix-intervals",
+      "run": 2,
+      "ttft": 4253,
+      "tps": 90.1,
+      "total": 67273,
+      "outputTokens": 5678,
+      "inputTokens": 166,
+      "thinkingMs": 62967,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "explain-eventloop",
+      "run": 1,
+      "ttft": 1356,
+      "tps": 74.6,
+      "total": 19553,
+      "outputTokens": 1358,
+      "inputTokens": 113,
+      "thinkingMs": 18185,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "explain-eventloop",
+      "run": 2,
+      "ttft": 1421,
+      "tps": 88.8,
+      "total": 19073,
+      "outputTokens": 1567,
+      "inputTokens": 113,
+      "thinkingMs": 17637,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-lru",
+      "run": 1,
+      "ttft": 856,
+      "tps": 58.8,
+      "total": 36471,
+      "outputTokens": 2093,
+      "inputTokens": 92,
+      "thinkingMs": 35535,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-lru",
+      "run": 2,
+      "ttft": 898,
+      "tps": 64.2,
+      "total": 18485,
+      "outputTokens": 1129,
+      "inputTokens": 92,
+      "thinkingMs": 17572,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-emitter",
+      "run": 1,
+      "ttft": 1203,
+      "tps": 66.4,
+      "total": 15169,
+      "outputTokens": 928,
+      "inputTokens": 98,
+      "thinkingMs": 13965,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-emitter",
+      "run": 2,
+      "ttft": 940,
+      "tps": 66.9,
+      "total": 32929,
+      "outputTokens": 2139,
+      "inputTokens": 98,
+      "thinkingMs": 31974,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "fix-intervals",
+      "run": 1,
+      "ttft": 802,
+      "tps": 63.8,
+      "total": 63629,
+      "outputTokens": 4010,
+      "inputTokens": 166,
+      "thinkingMs": 62809,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "fix-intervals",
+      "run": 2,
+      "ttft": 790,
+      "tps": 59.5,
+      "total": 67520,
+      "outputTokens": 3973,
+      "inputTokens": 166,
+      "thinkingMs": 66613,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "explain-eventloop",
+      "run": 1,
+      "ttft": 1032,
+      "tps": 40.3,
+      "total": 55333,
+      "outputTokens": 2189,
+      "inputTokens": 113,
+      "thinkingMs": 54287,
+      "stopReason": "end_turn",
+      "success": true
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "explain-eventloop",
+      "run": 2,
+      "ttft": 885,
+      "tps": 64.1,
+      "total": 17621,
+      "outputTokens": 1072,
+      "inputTokens": 113,
+      "thinkingMs": 16721,
+      "stopReason": "end_turn",
+      "success": true
+    }
+  ],
+  "outputs": [
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-lru",
+      "text": "```typescript\nclass LRUCache<K, V> {\n  private capacity: number;\n  private map: Map<K, V>;\n\n  constructor(capacity: number) {\n    if (!Number.isInteger(capacity) || capacity <= 0) {\n      throw new Error(\"capacity must be a positive integer\");\n    }\n    this.capacity = capacity;\n    this.map = new Map<K, V>();\n  }\n\n  get(key: K): V | undefined {\n    if (!this.map.has(key)) return undefined;\n    const value = this.map.get(key)!;\n    // 删除后重新插入，使其成为“最近使用”\n    this.map.delete(key);\n    this.map.set(key, value);\n    return value;\n  }\n\n  put(key: K, value: V): void {\n    if (this.map.has(key)) {\n      this.map.delete(key);\n    }\n    this.map.set(key, value);\n    if (this.map.size > this.capacity) {\n      const oldest = this.map.keys().next().value as K;\n      this.map.delete(oldest);\n    }\n  }\n}\n```",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "gen-emitter",
+      "text": "```typescript\ntype Handler<Args extends unknown[]> = (...args: Args) => void;\n\nclass EventEmitter<Events extends Record<string, unknown[]>> {\n  private handlers = new Map<keyof Events, Set<Handler<unknown[]>>>();\n\n  on<K extends keyof Events>(key: K, fn: Handler<Events[K]>): this {\n    let set = this.handlers.get(key);\n    if (!set) {\n      set = new Set();\n      this.handlers.set(key, set);\n    }\n    set.add(fn as Handler<unknown[]>);\n    return this;\n  }\n\n  off<K extends keyof Events>(key: K, fn: Handler<Events[K]>): this {\n    const set = this.handlers.get(key);\n    if (set) {\n      set.delete(fn as Handler<unknown[]>);\n      if (set.size === 0) this.handlers.delete(key);\n    }\n    return this;\n  }\n\n  emit<K extends keyof Events>(key: K, ...args: Events[K]): void {\n    const set = this.handlers.get(key);\n    if (!set) return;\n    for (const fn of [...set]) {\n      (fn as Handler<Events[K]>)(...args);\n    }\n  }\n}\n\n// ---------- 最小用法示例 ----------\ninterface MyEvents {\n  ping: [number];\n  data: [string, boolean];\n}\n\nconst bus = new EventEmitter<MyEvents>();\n\nconst onPing = (n: number) => console.log('ping:', n);\n\nbus.on('ping', onPing);\nbus.on('data', (s, b) => {\n  // s: string, b: boolean（自动推导）\n  console.log('data:', s, b);\n});\n\nbus.emit('ping', 42);            // ✅ ping: 42\nbus.emit('data', 'hello', true); // ✅ data: hello true\n\nbus.off('ping', onPing);\nbus.emit('ping', 42);            // 已取消订阅，无输出\n\nbus.emit('ping', 'oops');        // ❌ 编译错误：string 不能赋给 number\nbus.emit('other', 1);            // ❌ 编译错误：不存在的事件名\n```",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "fix-intervals",
+      "text": "## Bug 清单\n\n### Bug 1：空数组时返回 `[undefined]`\n\n`out` 直接用 `sorted[0]` 初始化，当 `intervals` 为空时它是 `undefined`。\n\n```ts\nmergeIntervals([])  // → [undefined]，应为 []\n```\n\nTS 默认配置下 `sorted[0]` 类型是 `number[]`（不开 `noUncheckedIndexedAccess` 查不出来），运行时才炸。\n\n### Bug 2：合并时终点被\"覆盖\"而不是取最大值\n\n`last[1] = cur[1]`，当当前区间被前一个区间**完全包含**时，会把结果区间缩短。\n\n```ts\nmergeIntervals([[1, 10], [2, 3]])\n// 2 < 10 成立 → last 变成 [1, 3]\n// 返回 [[1,3]]，正确答案 [[1,10]]\n```\n\n### Bug 3：端点相接的区间没有合并\n\n条件 `cur[0] < last[1]` 漏掉了 `cur[0] === last[1]` 的情况。按标准语义（LeetCode 56），`[1,4]` 和 `[4,5]` 应合并为 `[1,5]`。\n\n```ts\nmergeIntervals([[1, 4], [4, 5]])\n// 4 < 4 不成立 → 返回 [[1,4],[4,5]]，正确答案 [[1,5]]\n```\n\n（如果你的业务定义是\"端点相接不算重叠\"，这条可以不算 bug，但常规定义下是。）\n\n### Bug 4：原地修改了调用方的输入（两处副作用）\n\n- `intervals.sort()` 是就地排序，改变了调用方数组的**顺序**；\n- `out` 里存的是原二维数组内层元素的**引用**，`last[1] = ...` 直接改了调用方的**数据**。\n\n```ts\nconst input = [[5, 6], [1, 10], [2, 3]];\nmergeIntervals(input);\n// input 被改成 [[1,3],[2,3],[5,6]]：顺序被排了，[1,10] 还被改成了 [1,3]\n```\n\n## 修正后的完整代码\n\n```ts\nfunction mergeIntervals(intervals: number[][]): number[][] {\n  if (intervals.length === 0) return [];\n\n  // 拷贝外层数组和每个内层区间，避免污染调用方数据（修 Bug 4）\n  const sorted = intervals\n    .map(([start, end]) => [start, end])\n    .sort((a, b) => a[0] - b[0]);\n\n  const out: number[][] = [sorted[0]];\n  for (let i = 1; i < sorted.length; i++) {\n    const last = out[out.length - 1];\n    const cur = sorted[i];\n    if (cur[0] <= last[1]) {                    // 修 Bug 3：<=\n      last[1] = Math.max(last[1], cur[1]);      // 修 Bug 2：取 max\n    } else {\n      out.push(cur);\n    }\n  }\n  return out;\n}\n```\n\n因为先 clone 了每个内层数组，后面改 `last[1]` 只影响副本，不会波及调用方。\n\n## 验证\n\n```ts\nmergeIntervals([])                            // []\nmergeIntervals([[1, 10], [2, 3]])             // [[1,10]]   （原代码返回 [[1,3]]）\nmergeIntervals([[1, 4], [4, 5]])              // [[1,5]]    （原代码不合并）\nmergeIntervals([[5, 6], [1, 10], [2, 3]])     // [[1,10],[5,6]]，且 input 保持原样\nmergeIntervals([[1, 4], [0, 2], [3, 5]])      // [[0,5]]\n```\n\n顺带一提：起始点相同的多个区间在修正后也没问题——排序稳定性无所谓，因为 `Math.max` 保证终点取到最远。",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53",
+      "caseId": "explain-eventloop",
+      "text": "## 输出顺序\n\n```\n1\n6\n8\n3\n5\n7\n2\n4\n```\n\n## 逐行对应\n\n| 输出 | 来源 |\n|---|---|\n| `1` | 同步执行 `console.log('1')` |\n| `6` | async IIFE **同步部分**执行到第一个 `await` 为止 |\n| `8` | 同步执行 `console.log('8')` |\n| `3` | 微任务队列第 1 个：`.then` 回调 |\n| `5` | 微任务队列第 2 个：`queueMicrotask` |\n| `7` | 微任务队列第 3 个：`await null` 之后的续体（现代引擎中 `await` 已解决的值占一个微任务） |\n| `2` | 宏任务队列第 1 个：最先注册的 `setTimeout` |\n| `4` | 宏任务队列第 2 个：`.then` 回调里注册的 `setTimeout`（虽然回调先执行，但它被排到了 `2` 后面） |\n\n## 原因\n\n同步代码先全部执行完（`1`、`6`、`8`），其中 `.then` 回调、`queueMicrotask`、`await` 续体按 **FIFO 顺序进入微任务队列**（`3`、`5`、`7`），并必须在当前脚本结束后、任何宏任务之前全部清空。最后才轮到宏任务（定时器）队列，按注册先后依次执行 `2` 和 `4`——即使 `4` 的回调逻辑先于 `2` 运行，它入队时间更晚，所以排在后面。",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-lru",
+      "text": "```typescript\ninterface Node<K, V> {\n  key: K;\n  value: V;\n  prev: Node<K, V> | null;\n  next: Node<K, V> | null;\n}\n\nclass LRUCache<K, V> {\n  private readonly capacity: number;\n  private readonly map = new Map<K, Node<K, V>>();\n  private readonly head: Node<K, V>;\n  private readonly tail: Node<K, V>;\n\n  constructor(capacity: number) {\n    if (!Number.isInteger(capacity) || capacity <= 0) {\n      throw new RangeError(\"capacity must be a positive integer\");\n    }\n    this.capacity = capacity;\n    this.head = {} as Node<K, V>;\n    this.tail = {} as Node<K, V>;\n    this.head.next = this.tail;\n    this.tail.prev = this.head;\n  }\n\n  get(key: K): V | undefined {\n    const node = this.map.get(key);\n    if (node === undefined) return undefined;\n    this.detach(node);\n    this.pushFront(node);\n    return node.value;\n  }\n\n  put(key: K, value: V): void {\n    const existing = this.map.get(key);\n    if (existing !== undefined) {\n      existing.value = value;\n      this.detach(existing);\n      this.pushFront(existing);\n      return;\n    }\n    if (this.map.size >= this.capacity) {\n      const lru = this.tail.prev!;\n      this.detach(lru);\n      this.map.delete(lru.key);\n    }\n    const node: Node<K, V> = { key, value, prev: null, next: null };\n    this.map.set(key, node);\n    this.pushFront(node);\n  }\n\n  private detach(node: Node<K, V>): void {\n    node.prev!.next = node.next;\n    node.next!.prev = node.prev;\n    node.prev = null;\n    node.next = null;\n  }\n\n  private pushFront(node: Node<K, V>): void {\n    node.prev = this.head;\n    node.next = this.head.next;\n    this.head.next!.prev = node;\n    this.head.next = node;\n  }\n}\n```",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "gen-emitter",
+      "text": "```typescript\nclass EventEmitter<Events extends Record<string, unknown[]>> {\n  private handlers: {\n    [K in keyof Events]?: Array<(...args: Events[K]) => void>;\n  } = {};\n\n  on<K extends keyof Events>(key: K, fn: (...args: Events[K]) => void): void {\n    const list = this.handlers[key];\n    if (list) {\n      list.push(fn);\n    } else {\n      this.handlers[key] = [fn];\n    }\n  }\n\n  off<K extends keyof Events>(key: K, fn: (...args: Events[K]) => void): void {\n    const list = this.handlers[key];\n    if (!list) return;\n    const index = list.indexOf(fn);\n    if (index !== -1) list.splice(index, 1);\n  }\n\n  emit<K extends keyof Events>(key: K, ...args: Events[K]): void {\n    const list = this.handlers[key];\n    if (!list) return;\n    for (const fn of [...list]) {\n      fn(...args);\n    }\n  }\n}\n\n// 用法示例\nconst emitter = new EventEmitter<{\n  ping: [number];\n  data: [string, boolean];\n}>();\n\nconst onPing = (n: number) => console.log('ping:', n);\nemitter.on('ping', onPing);\n\nemitter.on('data', (msg, flag) => {\n  console.log('data:', msg, flag);\n});\n\nemitter.emit('ping', 42);        // OK\nemitter.emit('data', 'hello', true); // OK\n// emitter.emit('ping', 'oops');     // 编译错误\n// emitter.on('ping', (s: string) => {}); // 编译错误\n\nemitter.off('ping', onPing);\nemitter.emit('ping', 1);         // 无监听，无输出\n```",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "fix-intervals",
+      "text": "# Bug 分析\n\n共 5 个 bug，按严重程度排列：\n\n## Bug 1：包含关系的区间会被“缩短”（逻辑错误，最严重）\n\n```ts\nlast[1] = cur[1];  // 直接覆盖\n```\n\n**触发场景**：当前区间的终点小于已合并区间的终点（即当前区间被完全包含）。\n\n```\nmergeIntervals([[1,10],[2,3]])\n// 排序后：cur[0]=2 < last[1]=10 → last[1] = 3\n// 实际输出：[[1,3]]   期望输出：[[1,10]]\n```\n\n同理 `[[1,5],[1,3]]`（起点相等）也会输出错误的 `[[1,3]]`。必须用 `Math.max`。\n\n## Bug 2：端点相接的区间未合并\n\n```ts\nif (cur[0] < last[1])  // 漏掉了相等的情况\n```\n\n**触发场景**：闭区间语义下（如经典的 LeetCode 56），`[1,2]` 和 `[2,3]` 应合并为 `[1,3]`。\n\n```\nmergeIntervals([[1,2],[2,3]])\n// 实际输出：[[1,2],[2,3]]   期望输出：[[1,3]]\n```\n\n条件应为 `cur[0] <= last[1]`。\n\n## Bug 3：空输入返回 `[undefined]`\n\n**触发场景**：`mergeIntervals([])` 返回 `[undefined]`（长度为 1 的数组），而非 `[]`。下游代码若访问 `result[0][0]` 会直接抛 `TypeError`。缺少空数组守卫。\n\n## Bug 4：`sort()` 原地修改调用方的数组\n\n```ts\nconst sorted = intervals.sort(...);  // sort 是原地排序\n```\n\n**触发场景**：任何调用都会打乱调用方传入的数组顺序。\n\n```ts\nconst xs = [[5,6],[1,2]];\nmergeIntervals(xs);\n// xs 变成了 [[1,2],[5,6]] —— 调用方数据被悄悄改掉\n```\n\n## Bug 5：输出与输入共享内部数组引用\n\n`out` 里直接放入了输入的子数组引用，合并时 `last[1] = ...` 会改写入参。\n\n**触发场景**：\n\n```ts\nconst a = [1,3];\nmergeIntervals([a,[2,6]]);\n// a 变成了 [1,6] —— 即使不考虑 Bug 4，输入的子数组也被污染\n```\n\n即使本次调用没有合并发生，调用方之后修改返回值也会连带改掉原输入。\n\n---\n\n# 修正后的完整代码\n\n```ts\nfunction mergeIntervals(intervals: number[][]): number[][] {\n  // Bug 3：空输入守卫\n  if (intervals.length === 0) return [];\n\n  // Bug 4：拷贝后再排序，不修改入参\n  // （若目标环境支持 ES2023，也可用 intervals.toSorted(...)）\n  const sorted = [...intervals].sort((a, b) => a[0] - b[0]);\n\n  // Bug 5：放入拷贝，切断与输入的引用关系\n  const out: number[][] = [[...sorted[0]]];\n\n  for (let i = 1; i < sorted.length; i++) {\n    const last = out[out.length - 1];\n    const cur = sorted[i];\n\n    // Bug 2：< 改为 <=，端点相接也合并\n    if (cur[0] <= last[1]) {\n      // Bug 1：取 max 而不是直接覆盖，处理包含关系\n      last[1] = Math.max(last[1], cur[1]);\n    } else {\n      out.push([...cur]); // 同样放拷贝\n    }\n  }\n\n  return out;\n}\n```\n\n## 验证\n\n```ts\nmergeIntervals([]);                          // []\nmergeIntervals([[1,10],[2,3]]);              // [[1,10]]  ← Bug 1 修复\nmergeIntervals([[1,2],[2,3]]);               // [[1,3]]   ← Bug 2 修复\nmergeIntervals([[1,3],[2,6],[8,10],[15,18]]);// [[1,6],[8,10],[15,18]]\nmergeIntervals([[5,6],[1,2]]);               // [[1,2],[5,6]]，且入参顺序不变 ← Bug 4/5 修复\n```\n\n复杂度不变：时间 O(n log n)，空间 O(n)。\n\n**补充说明**：如果函数契约明确允许修改入参（一些性能敏感场景会这么做），Bug 4/5 可以视为设计选择而保留 `sort` 和引用；但作为通用工具函数，默认应该是无副作用的，尤其 Bug 5 那种“输出和输入暗中联动”的问题几乎必然在调用方引发难查的 bug。",
+      "stopReason": "end_turn"
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "caseId": "explain-eventloop",
+      "text": "## 输出\n\n```\n1\n6\n8\n3\n5\n7\n2\n4\n```\n\n## 解释\n\n主脚本同步执行到底：打印 `1`，注册宏任务 `'2'`，把 Promise 回调排入微任务队列；async 函数被调用后同步执行到 `await`，打印 `6` 并把后续代码（打印 `7`）作为微任务**排在当时队列的末尾**，最后打印 `8`。接着事件循环清空微任务队列（FIFO）：打印 `3`（此时才注册宏任务 `'4'`）、`5`、`7`。微任务全部清空后才开始执行宏任务队列，所以 `2` 先于 `4`。\n\n关键点：微任务（`Promise.then`、`queueMicrotask`、`await` 的续体）永远在本轮宏任务之后、下一个宏任务之前全部执行完；`await` 后面的代码本质上是 `Promise.then` 的回调，入队时机在 `'3'` 和 `'5'` 之后，因此排在微任务第三位。",
+      "stopReason": "end_turn"
+    }
+  ],
+  "summary": [
+    {
+      "model": "zhipu-glm53",
+      "name": "智谱 GLM-5.3",
+      "ttftMedian": 1389,
+      "tpsMedian": 89,
+      "totalMedian": 19943,
+      "wins": 3,
+      "successRate": 100
+    },
+    {
+      "model": "zhipu-glm53-flash",
+      "name": "智谱 GLM-5.3-Flash",
+      "ttftMedian": 892,
+      "tpsMedian": 64,
+      "totalMedian": 34700,
+      "wins": 1,
+      "successRate": 100
+    }
+  ]
+}

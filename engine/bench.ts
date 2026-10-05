@@ -67,6 +67,7 @@ interface ParseAccumulator {
   text: string;
   thinkingEnd: number; // 思考阶段结束时间戳
   firstEventTime: number;
+  stopReason?: string;
 }
 
 function makeAccumulator(): ParseAccumulator {
@@ -134,6 +135,12 @@ function handleAnthropicEvent(
     if (typeof u.output_tokens === "number")
       acc.outputTokens = u.output_tokens;
   }
+
+  // 结束原因（message_delta.delta.stop_reason）
+  const stop = (evt.delta as Record<string, unknown> | undefined)?.stop_reason;
+  if (type === "message_delta" && typeof stop === "string") {
+    acc.stopReason = stop;
+  }
 }
 
 function handleOpenAIEvent(
@@ -163,6 +170,10 @@ function handleOpenAIEvent(
     if (typeof u.completion_tokens === "number")
       acc.outputTokens = u.completion_tokens;
   }
+
+  // 结束原因（最后一个 chunk 的 finish_reason）
+  const finish = choices?.[0]?.finish_reason;
+  if (typeof finish === "string") acc.stopReason = finish;
 }
 
 /**
@@ -225,6 +236,7 @@ export async function bench(
       inputTokens: acc.inputTokens,
       text: acc.text,
       thinkingMs,
+      stopReason: acc.stopReason,
       success: true,
     };
   } catch (e) {

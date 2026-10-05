@@ -2,7 +2,7 @@
 
 > 模型测速台 · 填入任意模型的 endpoint + key，测 **TTFT / TPS / Total**，榜单对比排名
 
-支持 Anthropic 兼容 与 OpenAI 兼容 双协议，覆盖智谱、火山、百度、OpenAI、DeepSeek、Claude 等绝大多数模型厂商。
+支持 Anthropic 兼容 与 OpenAI 兼容 双协议，覆盖智谱、火山、百度、OpenAI、DeepSeek、Claude 等绝大多数模型厂商。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` vs `glm-5.3-flash` 同 key 直对比），表单一键快选，CLI 一条命令跑完编码用例矩阵。
 
 🌐 **[在线使用](https://coding-plan-bench.pages.dev/)** ｜ 💻 **[下载 Windows 本地版](https://github.com/TimeCraker/coding-plan-bench/releases)**
 
@@ -43,7 +43,7 @@
 
 打开 [coding-plan-bench.pages.dev](https://coding-plan-bench.pages.dev/) → 填表单 → 点测速 → 看榜单。
 
-首次访问预置了三家 GLM-5.2 示例数据，可直接看对比效果；测自己的会加入榜单一起排名。
+首次访问预置了 **GLM-5.3 vs GLM-5.3-Flash 实测数据**（2026-10-05，见 [results/](results/2026-10-05-glm-5.3-matrix.md)），可直接看对比效果；测自己的会加入榜单一起排名。
 
 ### 💻 下载本地版（Key 最安全）
 
@@ -65,6 +65,20 @@
 | **Total** | 总耗时（ms）— 端到端完成 | 越低越好 ↓（终极判据） |
 
 榜单支持按三个指标各自排名切换。多次取样取中位数，排除网络抖动。
+
+## 模型矩阵（glm-5.3 世代）
+
+模型矩阵的单一事实源在 [`engine/models.ts`](engine/models.ts)：智谱 `glm-5.3` / `glm-5.3-flash`（同一把 `ZHIPU_API_KEY`）+ 百度 `DeepSeek-V4.1-Flash` 占位 + GLM-5.2 三渠道存量对照。两处消费：
+
+- **网站快选**：测速表单顶部芯片，点击预填 endpoint / model / 协议（key 永不预填）
+- **CLI 矩阵跑分**：4 条区分档位的编码用例（生成×2 / 改错 / 解释）× 矩阵中所有有 key 的模型，串行 + 间隔频控 + 失败重试，产出中位数汇总与可复现的原始 JSON：
+
+```bash
+cp .env.example .env   # 填 ZHIPU_API_KEY
+npm run bench:matrix   # 结果写入 results/data/，报告见 results/
+```
+
+最新一轮实测（2026-10-05，temperature=0，32/32 成功）：**GLM-5.3 端到端中位 19.9s / 89 TPS，GLM-5.3-Flash 34.7s / 64 TPS；中高难用例上两档答案质量打平**——详见 [results/2026-10-05-glm-5.3-matrix.md](results/2026-10-05-glm-5.3-matrix.md)。
 
 ---
 
@@ -91,6 +105,7 @@ npm install
 npm run dev        # 前端开发 (http://localhost:5173)
 npm run build      # 构建前端到 site/dist
 npm run server     # 起 Node 后端 API (localhost:8787, 可选, 浏览器直调失败时回退)
+npm run bench:matrix # CLI 模型矩阵跑分 (读 env key, 写 results/data/)
 npm run tauri dev  # Tauri 本地 App 开发 (需 Rust + MSVC Build Tools)
 npm run tauri build # 打包 Windows 安装包
 ```
@@ -129,9 +144,13 @@ VITE_API_BASE=https://your-server.com/api npm run build
 ```
 coding-plan-bench/
 ├─ engine/            # 同构测速引擎 (三端共用)
-│  ├─ bench.ts        # 核心: 发请求 → SSE → 采集 TTFT/TPS/Total
+│  ├─ bench.ts        # 核心: 发请求 → SSE → 采集 TTFT/TPS/Total/stopReason
 │  ├─ parse-sse.ts    # SSE 流解析
+│  ├─ models.ts       # 模型矩阵 (glm-5.3 世代 + GLM-5.2 存量, 单一事实源)
 │  └─ types.ts        # 共享类型
+├─ bench/             # CLI 矩阵跑分 (npm run bench:matrix)
+│  ├─ prompts.ts      # 编码用例集 (生成/改错/解释, 含评分 rubric)
+│  └─ run.ts          # 串行编排 → 中位数汇总 → results/data/
 ├─ server/            # Hono 后端 (同构 Worker + Node)
 │  ├─ index.ts        # POST /api/bench
 │  └─ node.ts         # Node 运行时入口
@@ -142,6 +161,7 @@ coding-plan-bench/
 │  │  ├─ lib/         # api / storage / theme / format
 │  │  └─ styles/      # Tailwind + 主题变量
 │  └─ public/
+├─ results/           # 实测报告 (md) + 原始数据 (data/*.json)
 ├─ src-tauri/         # Tauri 本地 App (Rust 壳)
 ├─ .github/workflows/ # CI: 部署前端 + 构建 Windows 包
 └─ wrangler.toml      # Cloudflare Worker 配置

@@ -23,6 +23,7 @@ export interface BenchResult {
   inputTokens: number;
   text: string; // 正文输出（不含 thinking）
   thinkingMs: number; // 思考阶段耗时（0 表示无思考）
+  stopReason?: string; // end_turn / max_tokens / stop_sequence（max_tokens = 被截断）
   success: boolean;
   error?: string;
 }
