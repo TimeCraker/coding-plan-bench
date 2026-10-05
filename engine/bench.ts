@@ -32,15 +32,11 @@ import {
   sanitizeMessage,
 } from "./errors";
 import { sha256Hex } from "./profiles";
+import type { BuiltRequest } from "./request";
 
 // ───────────────────────── 新引擎 API ─────────────────────────
 
-/** 已构造好的协议请求（由 engine/request.ts 产出；本层原样使用，不改 URL） */
-export interface BuiltRequest {
-  url: string;
-  headers: Record<string, string>;
-  body: string;
-}
+export type { BuiltRequest } from "./request";
 
 export interface RunSampleOptions {
   protocol: Protocol;

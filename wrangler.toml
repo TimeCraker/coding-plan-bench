@@ -5,3 +5,12 @@ compatibility_date = "2024-12-01"
 # 开发: npx wrangler dev
 # 部署: npx wrangler deploy
 # 免费额度 10万请求/天，测速场景绰绰有余
+
+# ── 代理边界（S01）：preview/production 由部署时 vars/secrets 覆盖 ──
+# CORS_ALLOWED_ORIGINS：允许跨域调 /api/bench 的站点 origin（精确匹配，逗号分隔）
+# 无 Origin 的客户端一律拒绝写操作（curl 只能 /api/health）
+[vars]
+CORS_ALLOWED_ORIGINS = "https://coding-plan-bench.pages.dev,http://localhost:5173"
+# ALLOWED_UPSTREAMS：结构化 host|pathPrefix（hostname ASCII 小写精确匹配）
+# 本地开发默认放行智谱 Anthropic 兼容端点；生产以 owner 配置为准
+ALLOWED_UPSTREAMS = "open.bigmodel.cn|/api/anthropic/v1/messages"

@@ -15,6 +15,7 @@
     "tauri": "tauri",
     "test:unit": "vitest run",
     "test:integration": "vitest run tests/integration",
+    "test:security": "vitest run tests/integration/proxy-security.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

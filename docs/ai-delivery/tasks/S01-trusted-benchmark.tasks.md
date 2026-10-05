@@ -66,7 +66,7 @@ observed_handoff_revision: 1
   - Commit: `fix(engine): make benchmark metrics reproducible`
   - Evidence: done — `npm run test:unit -- --run tests/unit/measurement.test.ts tests/unit/aggregate.test.ts` exit 0（18 tests）+ `npm run test:integration -- --run tests/integration/bench.test.ts` exit 0（14 tests，mock fetchImpl+步进时钟注入）。覆盖：TTFT 只取首个非空 text（anthropic 完整流精确断言 ttft=40/thinking=20/generation=10/total=80/tps=9600）；仅正文 thinking=null；空流 failed/empty-output 无负 TTFT；usage 缺失 token/TPS=null（字符估算已删除）；generation=0 时 tps=null 非 Infinity；CRLF 流照常解析；401→auth 不回显 body；302→proxy-policy 拒绝跟随；TypeError→cors/network；非法 JSON→protocol/parse；用户取消→cancelled 且 fetch 只调 1 次（样本间隙取消不伪装 partial）；超时→timeout；3 样本 2 成功→partial+progress 3 次；TPS 逐样本中位数与 v1 拼接法结果显式不等（52.6/125→89 vs 85.7）；0 成功样本聚合 null。回归：`npm run test:unit -- --run` 80 tests 全过、typecheck/lint/build exit 0。ProtocolEvent 增加可选 text payload（计量层忽略、v1 CLI 兼容层收集正文；tests/unit/protocols.test.ts 断言同步更新——超 Tasks Files 一笔，Spec §5.1 允许）。v1 bench()/benchMedian() 保留为 bench/ CLI（owner 矩阵跑分）与旧 server 的兼容壳，计量已切新语义；legacy iterSSEEvents 无调用者已删除。this task commit
 
-- [ ] T-005 统一完整 Request URL 并收紧代理边界
+- [x] T-005 统一完整 Request URL 并收紧代理边界
   - Covers: FR-001, FR-002, FR-007, NFR-001, AC-003, AC-004, AC-005
   - Depends on: T-002
   - Evidence source: automated
@@ -75,7 +75,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:unit -- --run tests/unit/request.test.ts && npm run test:integration -- --run tests/integration/protocols.test.ts && npm run test:security`；危险矩阵全部拒绝，mock upstream 对拒绝请求调用数为 0
   - Definition of done: OpenAI `/v1` 不再重复；公共代理只能访问结构化 allowlist；samples 只允许 1/3/5；任何响应/日志 fixture 不含 Key 或上游 body。
   - Commit: `feat(proxy): enforce trusted upstream policy`
-  - Evidence: pending
+  - Evidence: done — `npm run test:unit -- --run tests/unit/request.test.ts` exit 0（10 tests）+ `npm run test:integration -- --run tests/integration/protocols.test.ts` exit 0（49 tests 含 bench 回归）+ `npm run test:security` exit 0（31 tests）。危险矩阵 13 项（HTTP/credentials/fragment/:8443/IPv4/IPv6/十六进制 IP/localhost/.local/未知 host/suffix 欺骗/path 越界/path 前缀伪造）全部 4xx 且 mock upstream 调用数=0；samples 2/7 拒绝；伪造 profileId/version/自带 prompt 拒绝（400）；body>16KiB→413 BODY_TOO_LARGE；非 JSON Content-Type→400；Origin 不在 allowlist/无 Origin POST→403 ORIGIN_NOT_ALLOWED（显式规则：curl 只能 /api/health，health 无 Origin 200 且不泄露 allowlist）；DNS 私网解析（注入 dnsLookup）→403 且 upstream 0 次。合法路径：200 BenchmarkRunResult(schema2/transport=trusted-proxy/complete)+x-request-id(uuid)+Cache-Control no-store+upstream 恰 1 次+URL 原样不追加（/v1 出现且仅出现一次）；上游 401→200 failed run code=auth 不回显 body；302→样本 proxy-policy 响应不含 location；网络故障→502 UPSTREAM_FAILED 安全摘要；响应/headers 不含 Key。server/{config,validation,security,index} 分层：结构化 host|pathPrefix allowlist（hostname ASCII 小写精确等值比较）、Node 部署 dnsLookup 注入私网校验（防 DNS rebinding，实现说明见 server/node.ts 注释）、日志仅 requestId/safe host/profile/samples/ms/status/errorCode。src/worker.ts 从 env 解析配置；wrangler.toml [vars] 给出 dev 值；.env.example 增加代理配置说明；package.json 增 test:security（Verify 入口必需）。typecheck/lint exit 0。this task commit
 
 - [ ] T-006 实现显式 browser/proxy/Tauri transport 与取消
   - Covers: FR-001, FR-006, FR-009, NFR-001, NFR-004, AC-003, AC-007
