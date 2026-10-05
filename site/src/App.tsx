@@ -1,123 +1,113 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Gauge, Shield, Coins, Brain, TrendingDown } from "lucide-react";
-import type { LeaderboardEntry } from "../../engine/types";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import type { TransportKind } from "../../engine/types";
 import { initTheme, toggleTheme, getTheme } from "./lib/theme";
-import { legacyRunBench, type BenchApiResponse } from "./lib/api";
 import {
-  loadLeaderboard,
-  addEntry,
-  removeEntry,
-  clearLeaderboard,
-  genId,
-} from "./lib/storage";
+  availableTransports,
+  defaultTransport,
+  detectRuntime,
+} from "./lib/runtime";
+import { createConsentToken } from "./lib/transports";
+import { useBenchmarkRun } from "./hooks/useBenchmarkRun";
 import { SecurityBanner } from "./components/SecurityBanner";
 import { BenchForm, type FormValues } from "./components/BenchForm";
+import { TransportSelector } from "./components/TransportSelector";
+import { RunProgress } from "./components/RunProgress";
 import { ResultCard } from "./components/ResultCard";
 import { Leaderboard } from "./components/Leaderboard";
 import { GlobalLeaderboard } from "./components/GlobalLeaderboard";
 import { Sidebar, type View } from "./components/Sidebar";
+import { Methodology } from "./components/Methodology";
+import {
+  APP_SUBTITLE,
+  APP_TITLE,
+  FOOTER_BENCH,
+} from "./content/copy";
+import {
+  loadLeaderboard,
+  removeEntry,
+  clearLeaderboard,
+} from "./lib/storage";
+import type { LeaderboardEntry } from "../../engine/types";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export default function App() {
   // 纯客户端 SPA：localStorage 在 lazy initializer 中同步可读，避免 effect 级联渲染
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => loadLeaderboard());
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<BenchApiResponse | null>(null);
-  const [highlightId, setHighlightId] = useState<string | undefined>();
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     initTheme();
     return getTheme();
   });
   const [view, setView] = useState<View>("bench");
 
-  const handleRun = async (v: FormValues) => {
-    setLoading(true);
-    setResult(null);
-    try {
-      // 过渡期：单样本 browser-direct（samples>1 不再自动切代理，T-007 接显式 transport UI）
-      const r = await legacyRunBench({
-        requestUrl: v.endpoint,
-        apiKey: v.apiKey,
-        model: v.model,
-        protocol: v.protocol,
-      });
-      setResult(r);
-      if (r.success) {
-        const genMs = Math.max(1, r.total - r.ttft);
-        const entry: LeaderboardEntry = {
-          id: genId(),
-          label: v.label || v.model,
-          endpoint: v.endpoint,
-          model: v.model,
-          protocol: v.protocol,
-          ttft: r.ttft,
-          tps: Math.round((r.outputTokens / genMs) * 1000 * 10) / 10,
-          total: r.total,
-          outputTokens: r.outputTokens,
-          samples: r.samples,
-          ranAt: new Date().toISOString(),
-        };
-        const list = addEntry(entry);
-        setEntries(list);
-        setHighlightId(entry.id);
-        setTimeout(() => setHighlightId(undefined), 2000);
-      }
-    } catch (e) {
-      setResult({
-        ttft: 0, total: 0, outputTokens: 0, success: false,
-        error: e instanceof Error ? e.message : String(e), samples: 1,
-      });
-    } finally {
-      setLoading(false);
-    }
+  // 运行时与 transport（FR-001）：显式选择，samples 不改变它
+  const runtime = detectRuntime();
+  const [transport, setTransport] = useState<TransportKind>(() =>
+    defaultTransport(detectRuntime()),
+  );
+
+  const run = useBenchmarkRun();
+
+  const handleRun = (v: FormValues) => {
+    void run.start({
+      transport,
+      requestUrl: v.requestUrl,
+      apiKey: v.apiKey,
+      model: v.model,
+      protocol: v.protocol,
+      samples: v.samples === 3 || v.samples === 5 ? v.samples : 1,
+    });
   };
 
   const handleTheme = () => setTheme(toggleTheme());
 
-  // 两个功能的 Hero 配置
+  // reduced-motion：停止背景循环动画调度（NFR-003）
+  const reduceMotion = useReducedMotion();
+
+  // compact hero 文案（非 bench 视图沿用 owner 的能力榜介绍）
   const heroConfig = {
     bench: {
-      badge: "支持 Anthropic / OpenAI 双协议 · 任意模型",
-      title: <>谁的模型<br /><span className="gradient-text">更快？</span></>,
-      desc: "填入任意模型的 endpoint 和 API Key，流式采集 TTFT、TPS、Total，加入榜单对比排名。",
-      features: [
-        { icon: <Zap className="w-3.5 h-3.5" />, label: "流式采集" },
-        { icon: <Gauge className="w-3.5 h-3.5" />, label: "三指标对比" },
-        { icon: <Shield className="w-3.5 h-3.5" />, label: "Key 不存储" },
-      ],
+      title: APP_TITLE,
+      desc: APP_SUBTITLE,
     },
     global: {
-      badge: "行业参考数据 · 2026-08 · 每周可更新",
-      title: <>谁更强？<br /><span className="gradient-text">谁更值？</span></>,
-      desc: "全球模型综合智能、单任务成本、订阅制套餐横向对比。测速看本机表现，这里看行业水平。",
-      features: [
-        { icon: <Brain className="w-3.5 h-3.5" />, label: "综合智能" },
-        { icon: <Coins className="w-3.5 h-3.5" />, label: "性价比" },
-        { icon: <TrendingDown className="w-3.5 h-3.5" />, label: "订阅对比" },
-      ],
+      title: "全球模型能力与套餐参考",
+      desc: "综合智能、Agent 能力、性价比与订阅制套餐横向对比（行业参考数据，非本机实测）。测速请切回左侧「测速台」。",
     },
   }[view];
 
   return (
     <div className="min-h-screen bg-app relative">
-      {/* 背景装饰 */}
-      <div className="fixed inset-0 grid-bg pointer-events-none opacity-40" aria-hidden="true" />
-      <motion.div
+      {/* 背景装饰：reduced-motion 时不调度 JS 循环动画 */}
+      <div
+        className="fixed inset-0 grid-bg pointer-events-none opacity-40"
         aria-hidden="true"
-        className="fixed -top-40 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)", opacity: 0.08 }}
-        animate={{ x: [0, 80, 0], y: [0, 40, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
-      <motion.div
-        aria-hidden="true"
-        className="fixed top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle, var(--cta) 0%, transparent 70%)", opacity: 0.06 }}
-        animate={{ x: [0, -60, 0], y: [0, 60, 0] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {!reduceMotion && (
+        <>
+          <motion.div
+            aria-hidden="true"
+            className="fixed -top-40 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)",
+              opacity: 0.08,
+            }}
+            animate={{ x: [0, 80, 0], y: [0, 40, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            aria-hidden="true"
+            className="fixed top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, var(--cta) 0%, transparent 70%)",
+              opacity: 0.06,
+            }}
+            animate={{ x: [0, -60, 0], y: [0, 60, 0] }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </>
+      )}
 
       <div className="relative flex">
         <Sidebar view={view} onView={setView} theme={theme} onTheme={handleTheme} />
@@ -125,57 +115,22 @@ export default function App() {
         <div className="flex-1 min-w-0">
           <SecurityBanner />
 
-          {/* Hero：随 view 切换 */}
-          <section className="max-w-6xl mx-auto px-4 md:px-6 pt-10 md:pt-16 pb-8">
+          {/* 紧凑价值说明（取代营销大 Hero，工具表单前置） */}
+          <section className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-8 pb-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={view}
-                initial="hidden"
-                animate="show"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}
+                transition={{ duration: 0.3, ease }}
               >
-                <motion.div
-                  variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease } } }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-app shadow-sm-card text-xs text-muted mb-6"
-                >
-                  <span className="relative flex w-2 h-2">
-                    <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-60" />
-                    <span className="relative rounded-full bg-success w-2 h-2" />
-                  </span>
-                  {heroConfig.badge}
-                </motion.div>
-
-                <motion.h2
-                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease } } }}
-                  className="text-4xl md:text-6xl font-bold tracking-tight text-app leading-[1.05]"
-                >
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-app">
                   {heroConfig.title}
-                </motion.h2>
-
-                <motion.p
-                  variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease } } }}
-                  className="mt-5 text-base md:text-lg text-muted max-w-xl leading-relaxed"
-                >
+                </h1>
+                <p className="mt-2 text-sm text-muted max-w-2xl leading-relaxed">
                   {heroConfig.desc}
-                </motion.p>
-
-                <motion.div
-                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.3 } } }}
-                  className="mt-7 flex flex-wrap gap-2.5"
-                >
-                  {heroConfig.features.map((f) => (
-                    <motion.span
-                      key={f.label}
-                      variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease } } }}
-                      whileHover={{ y: -2 }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-app text-xs font-medium text-muted cursor-default shadow-sm-card hover:shadow-md-card transition-shadow"
-                    >
-                      <span className="text-primary">{f.icon}</span>
-                      {f.label}
-                    </motion.span>
-                  ))}
-                </motion.div>
+                </p>
               </motion.div>
             </AnimatePresence>
           </section>
@@ -192,16 +147,38 @@ export default function App() {
                   transition={{ duration: 0.35, ease }}
                   className="space-y-6"
                 >
-                  <BenchForm onRun={handleRun} loading={loading} />
-                  <AnimatePresence mode="wait">
-                    {result && <ResultCard result={result} />}
-                  </AnimatePresence>
+                  {/* 顺序（Spec §4.1）：执行位置/Key 路径 → 表单 → 进度/结果 → 榜单 → 方法学 */}
+                  <TransportSelector
+                    value={transport}
+                    available={availableTransports(runtime)}
+                    onChange={setTransport}
+                  />
+                  <BenchForm onRun={handleRun} busy={run.phase === "running" || run.phase === "validating"} />
+                  <RunProgress
+                    phase={run.phase}
+                    progress={run.progress}
+                    onGrantConsent={() => run.grantConsent(createConsentToken())}
+                    onDeclineConsent={run.reset}
+                    onCancel={run.cancel}
+                  />
+                  {run.result && <ResultCard run={run.result} />}
+                  {run.error && (
+                    <div
+                      role="alert"
+                      className="bg-surface rounded-2xl border border-app shadow-md-card p-4 text-sm text-app"
+                    >
+                      {run.error.safeMessage}
+                    </div>
+                  )}
                   <Leaderboard
                     entries={entries}
                     onRemove={(id) => setEntries(removeEntry(id))}
-                    onClear={() => { clearLeaderboard(); setEntries([]); }}
-                    highlightId={highlightId}
+                    onClear={() => {
+                      clearLeaderboard();
+                      setEntries([]);
+                    }}
                   />
+                  <Methodology />
                 </motion.div>
               ) : (
                 <motion.div
@@ -218,7 +195,7 @@ export default function App() {
 
             <footer className="text-center text-xs text-muted pt-6 pb-2">
               {view === "bench"
-                ? "测速受网络影响，反映本机当前真实表现"
+                ? FOOTER_BENCH
                 : "能力榜为行业参考数据（Artificial Analysis 等），非本机实测"}
             </footer>
           </main>

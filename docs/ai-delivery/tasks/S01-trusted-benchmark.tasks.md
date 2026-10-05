@@ -88,7 +88,7 @@ observed_handoff_revision: 1
   - Commit: `feat(runtime): add explicit local and remote transports`
   - Evidence: done — `npm run test:integration -- --run tests/integration/transports.test.ts` exit 0（59 tests：samples=1/3/5 × browser-direct 全部请求只打 provider 且无 /bench；trusted-proxy 无 consent 抛 consent 错误 0 次请求、有 consent 恰 1 次 POST 代理并透传 schema2 结果、403→proxy-policy；tauri-local 经 mock plugin-http 只打 provider 不调用项目 /api；CORS 失败不自动代理（直连 1 次尝试即 failed/cors-network）；取消后停止后续样本 status=cancelled fetch 仅 1 次；progress 3 次 index 递增）+ `npm run test:unit -- --run tests/unit/runtime.test.ts`（5 tests：web/tauri 检测、默认与可选 transport、tauri 无远端 fallback）+ `npm run typecheck` exit 0 + `npm run build` exit 0。cargo check --locked --manifest-path src-tauri/Cargo.toml → **environment blocker**：本机无 Rust 工具链（cargo: command not found，owner 授权第 4 条），不声称 AC-007 通过；且 Cargo.lock 无法在本地再生成（新依赖 tauri-plugin-http 需 cargo 环境更新 lock），CI/Windows runner 构建时 resolve——AC-007 外部证据归 T-012 owner。注 1：@tauri-apps/plugin-http 加入 dependencies（Tauri 官方 HTTP 插件 JS 绑定，Spec §9.1 冻结架构方向）。注 2：App.tsx 最小适配（旧 runBench→legacyRunBench 单样本 browser-direct，samples>1 不再自动切代理 AUD-001 即时生效；完整 UI 接线归 T-007）——超出 Tasks Files 一笔，Spec §5.1 site/src/** 允许。注 3：宿主断电中断恢复后 Windows 用户 Temp 目录 esbuild 删除链路损坏（新建临时文件 Access is denied），本地 build 需 `TMP/TEMP 指向新目录` 绕过，exit 0；系统级环境噪音非代码问题。transport 编排：orchestrator 无任何按 samples 选 transport 的代码路径；useBenchmarkRun 状态机 idle→validating→consent-required→running→settled+unmount abort；Tauri capabilities 最小权限 http:default+scope https://*；CSP 非 null（default-src self/object-src none/base-uri none/frame-ancestors none/connect-src self https:）。this task commit
 
-- [ ] T-007 重构可信测速主流程与专业文案
+- [x] T-007 重构可信测速主流程与专业文案
   - Covers: FR-001, FR-005, FR-006, FR-010, NFR-004, AC-003, AC-008
   - Depends on: T-004, T-006
   - Evidence source: automated
@@ -97,7 +97,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:e2e -- --grep "transport consent|copy and provenance|progress and cancel"`；三 transport 文案与执行状态一致，默认主流程不发送到代理
   - Definition of done: 用户在提交前知道 Key 路径；失败有可执行建议；进度/取消/partial 清晰；所有受审计文案有实现事实支撑。
   - Commit: `feat(ui): make benchmark trust and progress explicit`
-  - Evidence: pending
+  - Evidence: done — 红阶段：实现前 `npx playwright test tests/e2e/benchmark-flow.spec.ts tests/e2e/copy-provenance.spec.ts` 全部失败（选择器不存在）；实现后官方 Verify `npm run test:e2e -- --grep "transport consent|copy and provenance|progress and cancel"` exit 0（9 tests）。覆盖：默认 browser-direct 提交后 provider 恰 1 次且代理 0 次；选项目代理→consent 面板（含“Worker 内存转发”实质文案）→拒绝则 0 请求→同意后恰 1 次代理且结果标 trusted-proxy；3 样本显示进度 1/3+取消按钮→取消后状态“已取消”且 provider 请求数<3；页面无“任意模型/不上传/本机当前真实表现/终极判据”（site/src grep 0 命中，README 剩余 2 处归 T-010）；协议切换 placeholder 完整地址（/v1/messages ↔ /v1/chat/completions）；结果卡展示 transport/profile/完整状态/成功样本 x/y/token 来源，Key 不出现在结果文本；方法学含指标口径与中位数说明。实现：copy.ts 文案单一事实源（TRANSPORT_COPY/CONSENT/METRIC/STATUS/ERROR_ADVICE 每错误码可执行建议）；App 首屏重排（紧凑说明→TransportSelector→BenchForm→RunProgress(consent+进度+取消)→ResultCard→Leaderboard→Methodology），大 Hero 移除；useBenchmarkRun 接线；BenchForm 改 Request URL 完整地址+协议 radio+快选预填完整 URL，运行时 <style> 移除（纯 Tailwind utility）；useReducedMotion 停止背景循环（T-009 范围提前完成）。回归：typecheck/lint exit 0、unit 140、integration 59、build exit 0（TMP/TEMP 绕法）。v1 榜单暂存显示（新结果不写入 v1 存储，v2 存储归 T-008）。this task commit
 
 - [ ] T-008 迁移本地数据并建立可比较榜单
   - Covers: FR-003, FR-005, FR-008, NFR-002, NFR-005, AC-002, AC-006
