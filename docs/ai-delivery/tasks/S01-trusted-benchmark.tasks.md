@@ -36,7 +36,7 @@ observed_handoff_revision: 1
   - Commit: `feat(engine): define versioned benchmark contracts`
   - Evidence: done — `npm run test:unit -- --run tests/unit/types.test.ts tests/unit/profiles.test.ts` exit 0（21 tests：schema=2/measurement=1 字面量、SAMPLE_COUNTS=[1,3,5]、sampleInvariants 拒负值/NaN/Infinity/complete-无正文/tps-无tokens、ERROR_CODES 12 个与 Spec §4.5 一致、BenchmarkRunResult JSON 不含 apiKey/Authorization/x-api-key）；红阶段确认：实现前同一命令 2 files failed（模块不存在）。`npm run typecheck` exit 0。cpb-standard@1：prompt >120 字符（含三函数代码生成任务，替代 Reply exactly: OK）、maxTokens=1024、temperature=0、timeoutMs=90s；promptSha256 与 node:crypto 交叉验证一致，sha256Hex 通过 FIPS 180-4 公开向量+UTF-8 中文+多块长输入。measurement.ts 时间线 reducer（requestStart/firstReasoning/firstText/lastText/streamEnd）与 aggregate.ts（逐指标中位数、TPS 逐样本后中位数、any-cancelled→cancelled）以纯函数落地，未接线 bench.ts。this task commit
 
-- [ ] T-003 重写 SSE parser 与双协议事件适配器
+- [x] T-003 重写 SSE parser 与双协议事件适配器
   - Covers: FR-004, NFR-002, AC-001, AC-005
   - Depends on: T-002
   - Evidence source: automated
@@ -45,7 +45,14 @@ observed_handoff_revision: 1
   - Verify: `npm run test:unit -- --run tests/unit/sse.test.ts tests/unit/protocols.test.ts`；Stage 验证矩阵全部 fixture 通过，非法 JSON 产生稳定 parse error 而非静默成功
   - Definition of done: 本轮审计的 CRLF=0 复现测试先失败后通过；parser 与 provider event semantics 分层；未知合法 SSE 字段不会破坏后续事件。
   - Commit: `fix(engine): parse SSE streams across protocol variants`
-  - Evidence: pending
+  - Evidence: done — 红阶段：实现前 `npm run test:unit -- --run tests/unit/sse.test.ts tests/unit/protocols.test.ts` 12 failed（createSSEParser 不存在 / engine/protocols 模块缺失）；实现后同命令 exit 0（27 tests）。CRLF=0 复现（AUD-003）：v1 实现只 `buffer.indexOf("
+
+")`，`"
+
+"` 中两个 
+ 不相邻故 CRLF 流 0 事件（见 git 历史 engine/parse-sse.ts@6064a50 前）；新 createSSEParser 状态机对 CRLF_STREAM 解析 2 事件、1 字节粒度 chunk 切分与整流等价（LF/CRLF）、/
+ 分属两 chunk 安全。覆盖：多 data: 行 
+ 拼接、comment/heartbeat、event 透传、无 data 不 dispatch、EOF 尾事件、CR-only、UTF-8 多字节跨 chunk + decoder flush（ReadableStream 集成）。协议分层：anthropic/openai adapter 输出 typed ProtocolEvent（usage 覆盖式、text/thinking 非空才发、finish、流内 error 只透传类型枚举不回显 body）；非法 JSON/非对象 JSON 抛 ProtocolParseError（code=protocol/parse）不静默；未知合法事件返回 []。legacy iterSSEEvents 保留为过渡 JSON 便利层（内部已用新 parser，CRLF bug 随之修复），T-004 删除。this task commit
 
 - [ ] T-004 重建单样本计时与多样本聚合
   - Covers: FR-003, FR-004, FR-005, FR-006, NFR-002, AC-001, AC-002
