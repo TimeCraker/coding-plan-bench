@@ -26,3 +26,12 @@ Thumbs.db
 .vite/
 .shots/
 src-tauri/target/
+
+# TypeScript / test deterministic caches (never commit build artifacts)
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Playwright local outputs
+test-results/
+playwright-report/
+.blob-report/

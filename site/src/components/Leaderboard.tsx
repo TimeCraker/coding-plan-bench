@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Trophy, Zap, Activity, Timer, Sparkles, Crown } from "lucide-react";
 import type { LeaderboardEntry } from "../../../engine/types";
-import { fmtMs, fmtTps, fmtTime } from "../lib/format";
+import { fmtMs, fmtTps } from "../lib/format";
 import { isSeed } from "../lib/storage";
 
 type Metric = "ttft" | "tps" | "total";

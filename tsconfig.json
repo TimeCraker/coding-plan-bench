@@ -15,12 +15,23 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
+    "incremental": false,
+    "types": ["node", "vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@bench/*": ["bench/*"]
+      "@/*": ["site/src/*"]
     }
   },
-  "include": ["src", "bench"],
-  "references": []
+  "include": [
+    "engine",
+    "server",
+    "src",
+    "site/src",
+    "tests",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "eslint.config.js"
+  ],
+  "exclude": ["node_modules", "site/dist", "bench"]
 }

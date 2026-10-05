@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Gauge, Shield, Coins, Brain, TrendingDown } from "lucide-react";
 import type { LeaderboardEntry } from "../../engine/types";
@@ -21,18 +21,16 @@ import { Sidebar, type View } from "./components/Sidebar";
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export default function App() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  // 纯客户端 SPA：localStorage 在 lazy initializer 中同步可读，避免 effect 级联渲染
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(() => loadLeaderboard());
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BenchApiResponse | null>(null);
   const [highlightId, setHighlightId] = useState<string | undefined>();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [view, setView] = useState<View>("bench");
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
     initTheme();
-    setTheme(getTheme());
-    setEntries(loadLeaderboard());
-  }, []);
+    return getTheme();
+  });
+  const [view, setView] = useState<View>("bench");
 
   const handleRun = async (v: FormValues) => {
     setLoading(true);

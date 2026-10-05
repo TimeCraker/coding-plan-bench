@@ -92,7 +92,7 @@ function Row({ item, i, pct, main, sub, note }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-semibold text-app truncate">{item.name as string}</span>
-            {item.vendor && <span className="text-[11px] text-muted">{item.vendor as string}</span>}
+            {typeof item.vendor === "string" && item.vendor && <span className="text-[11px] text-muted">{item.vendor}</span>}
             <TypeTag type={item.type as string} />
             {"region" in item && (
               <MiniTag tone={item.region === "国内" ? "blue" : "purple"}>{item.region as string}</MiniTag>
@@ -176,7 +176,6 @@ export function GlobalLeaderboard() {
       };
     }
     if (tab === "value") {
-      const maxCost = 2.75;
       const cost = item.cost as number;
       // 性价比指数 = 智能分 / 成本，归一化作进度条（便宜+强 → 条长）
       const vi = (item.score as number) / cost;

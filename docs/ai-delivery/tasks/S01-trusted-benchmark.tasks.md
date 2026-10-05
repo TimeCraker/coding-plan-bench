@@ -14,7 +14,7 @@ observed_handoff_revision: 1
 
 > 依赖顺序和实现契约以 Stage Spec 为准。Implementer 只可更新本文件的 checkbox 与 `Evidence`，不得修改 Covers/Files/Work/Verify/DoD。每个 Task 一个逻辑提交；失败时保持 `[ ]` 并停止依赖任务。
 
-- [ ] T-001 建立覆盖真实源码的质量基线
+- [x] T-001 建立覆盖真实源码的质量基线
   - Covers: FR-012, NFR-005, AC-011
   - Depends on: none
   - Evidence source: automated
@@ -23,7 +23,7 @@ observed_handoff_revision: 1
   - Verify: `npm run typecheck && npm run lint && npm run test:unit -- --run --passWithNoTests && npm run build`；全部退出 0，且 TypeScript 实际列出的 root files 包含 `engine/bench.ts` 与 `site/src/App.tsx`
   - Definition of done: 当前审计发现的 5 个完整类型错误消失；所有后续 Verify 入口真实存在；构建/测试不会修改 tracked 文件。
   - Commit: `chore(quality): establish full-repo verification baseline`
-  - Evidence: pending
+  - Evidence: done — exit 0 全部：`npm run typecheck`（8 个既有类型错误清零：fetchResults.ts 失效 bench/types 引用+ImportMetaEnv、api.ts 未用 buildDirectBody+prompt 可空、Leaderboard.tsx 未用 fmtTime、GlobalLeaderboard.tsx unknown-as-ReactNode/未用 maxCost/ImportMetaEnv）；`npm run lint`（修复 App.tsx/useCountUp.ts react-hooks/set-state-in-effect 2 处）；`npm run test:unit -- --run --passWithNoTests`（code 0, no test files yet）；`npm run build`（vite 7.3.6, 1950 modules, exit 0）。`npx tsc --noEmit --listFiles` 确认 root files 含 `engine/bench.ts`、`site/src/App.tsx`（仓库内 21 个源文件入列）。tsconfig include=engine/server/src/site/src/tests+根配置，paths `@/*`→site/src/* 与 vite.config 一致；tsbuildinfo 已 untrack+删除并 gitignore；playwright channel=msedge 免下载浏览器；vitest setup tests/setup/no-network.ts 机械禁止真实网络。注：App.tsx/useCountUp.ts/GlobalLeaderboard.tsx 为 lint/typecheck 门禁必需的静态错误修复（Spec §5.1 site/src/** 允许、超出 Tasks Files 列表 3 个文件）。this task commit
 
 - [ ] T-002 固化 benchmark profile、结果和错误领域契约
   - Covers: FR-002, FR-003, FR-004, FR-005, FR-008, NFR-002, AC-001, AC-002, AC-005, AC-006

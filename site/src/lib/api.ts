@@ -29,41 +29,6 @@ const API_BASE =
   (import.meta as unknown as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ||
   "/api"; // 默认同源（Pages 部署时通过 _redirects 或 Worker routes 代理）
 
-/** 构造直调请求体 */
-function buildDirectBody(p: BenchParams) {
-  const base = `${p.endpoint.replace(/\/$/, "")}`;
-  const url =
-    p.protocol === "anthropic"
-      ? `${base}/v1/messages`
-      : `${base}/v1/chat/completions`;
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${p.apiKey}`,
-  };
-  if (p.protocol === "anthropic") {
-    headers["anthropic-version"] = "2023-06-01";
-    headers["x-api-key"] = p.apiKey;
-  }
-  const body =
-    p.protocol === "anthropic"
-      ? {
-          model: p.model,
-          max_tokens: p.maxTokens ?? 512,
-          temperature: 0,
-          stream: true,
-          messages: [{ role: "user", content: p.prompt || "Reply exactly: OK" }],
-        }
-      : {
-          model: p.model,
-          max_tokens: p.maxTokens ?? 512,
-          temperature: 0,
-          stream: true,
-          stream_options: { include_usage: true },
-          messages: [{ role: "user", content: p.prompt || "Reply exactly: OK" }],
-        };
-  return { url, headers, body: JSON.stringify(body) };
-}
-
 /** 浏览器直调（流式采集，复用 engine 逻辑） */
 async function benchDirect(p: BenchParams): Promise<BenchApiResponse> {
   const { bench } = await import("../../../engine/bench");
@@ -72,7 +37,7 @@ async function benchDirect(p: BenchParams): Promise<BenchApiResponse> {
     apiKey: p.apiKey,
     model: p.model,
     protocol: p.protocol,
-    prompt: p.prompt,
+    prompt: p.prompt ?? "Reply exactly: OK",
     maxTokens: p.maxTokens,
     timeoutMs: 90_000,
   });
