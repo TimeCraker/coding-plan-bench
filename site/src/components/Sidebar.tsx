@@ -1,7 +1,4 @@
-import { motion } from "framer-motion";
 import { Activity, Globe, Sun, Moon, Github, Zap } from "lucide-react";
-
-const ease = [0.16, 1, 0.3, 1] as const;
 
 export type View = "bench" | "global";
 
@@ -40,17 +37,10 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
             <button
               key={n.id}
               onClick={() => onView(n.id)}
-              className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-left"
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-left ${view === n.id ? "bg-primary shadow-glow-card" : "hover:bg-surface-2"}`}
               style={{ color: view === n.id ? "#fff" : "var(--text)" }}
               data-active={view === n.id}
             >
-              {view === n.id && (
-                <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-xl bg-primary shadow-glow-card"
-                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                />
-              )}
               <span className="relative z-10 shrink-0">{n.icon}</span>
               <span className="relative z-10 min-w-0">
                 <span className="block text-[13px] font-semibold leading-tight">{n.label}</span>
@@ -66,15 +56,9 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
             onClick={onTheme}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-2 transition-colors cursor-pointer text-muted hover:text-app"
           >
-            <motion.span
-              key={theme}
-              initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, ease }}
-              className="inline-block"
-            >
+            <span key={theme} className="inline-block anim-fade-in">
               {theme === "light" ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}
-            </motion.span>
+            </span>
             <span className="text-[13px] font-medium">{theme === "light" ? "深色模式" : "浅色模式"}</span>
           </button>
           <a
@@ -113,12 +97,9 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
             <button
               key={n.id}
               onClick={() => onView(n.id)}
-              className="relative flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer"
+              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer ${view === n.id ? "bg-primary" : ""}`}
               style={{ color: view === n.id ? "#fff" : "var(--text-muted)" }}
             >
-              {view === n.id && (
-                <motion.div layoutId="sidebar-active-m" className="absolute inset-0 rounded-lg bg-primary" transition={{ type: "spring", stiffness: 400, damping: 32 }} />
-              )}
               <span className="relative z-10 flex items-center gap-1.5">
                 {n.icon}
                 {n.label}

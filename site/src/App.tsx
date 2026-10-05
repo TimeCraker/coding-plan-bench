@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { TransportKind } from "../../engine/types";
 import { initTheme, toggleTheme, getTheme } from "./lib/theme";
 import {
@@ -33,8 +32,6 @@ import {
   restoreEntry,
 } from "./lib/storage";
 import type { LeaderboardEntryV2 } from "../../engine/types";
-
-const ease = [0.16, 1, 0.3, 1] as const;
 
 export default function App() {
   // 纯客户端 SPA：localStorage 在 lazy initializer 中同步可读，避免 effect 级联渲染
@@ -106,9 +103,6 @@ export default function App() {
 
   const handleTheme = () => setTheme(toggleTheme());
 
-  // reduced-motion：停止背景循环动画调度（NFR-003）
-  const reduceMotion = useReducedMotion();
-
   // compact hero 文案（非 bench 视图沿用 owner 的能力榜介绍）
   const heroConfig = {
     bench: {
@@ -123,35 +117,27 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-app relative">
-      {/* 背景装饰：reduced-motion 时不调度 JS 循环动画 */}
+      {/* 背景装饰：CSS 循环动画（prefers-reduced-motion 由全局 CSS 覆盖停止） */}
       <div
         className="fixed inset-0 grid-bg pointer-events-none opacity-40"
         aria-hidden="true"
       />
-      {!reduceMotion && (
-        <>
-          <motion.div
-            aria-hidden="true"
-            className="fixed -top-40 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)",
-              opacity: 0.08,
-            }}
-            animate={{ x: [0, 80, 0], y: [0, 40, 0] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="fixed top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, var(--cta) 0%, transparent 70%)",
-              opacity: 0.06,
-            }}
-            animate={{ x: [0, -60, 0], y: [0, 60, 0] }}
-            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </>
-      )}
+      <div
+        aria-hidden="true"
+        className="fixed -top-40 left-1/4 w-[600px] h-[600px] rounded-full pointer-events-none bg-drift-a"
+        style={{
+          background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)",
+          opacity: 0.08,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="fixed top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none bg-drift-b"
+        style={{
+          background: "radial-gradient(circle, var(--cta) 0%, transparent 70%)",
+          opacity: 0.06,
+        }}
+      />
 
       <div className="relative flex flex-col md:flex-row">
         <Sidebar view={view} onView={setView} theme={theme} onTheme={handleTheme} />
@@ -161,36 +147,20 @@ export default function App() {
 
           {/* 紧凑价值说明（取代营销大 Hero，工具表单前置） */}
           <section className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-8 pb-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={view}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3, ease }}
-              >
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-app">
-                  {heroConfig.title}
-                </h1>
-                <p className="mt-2 text-sm text-muted max-w-2xl leading-relaxed">
-                  {heroConfig.desc}
-                </p>
-              </motion.div>
-            </AnimatePresence>
+            <div key={view} className="anim-fade-up">
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-app">
+                {heroConfig.title}
+              </h1>
+              <p className="mt-2 text-sm text-muted max-w-2xl leading-relaxed">
+                {heroConfig.desc}
+              </p>
+            </div>
           </section>
 
           {/* 主体：按 view 切换 */}
           <main className="max-w-6xl mx-auto px-4 md:px-6 pb-20">
-            <AnimatePresence mode="wait">
               {view === "bench" ? (
-                <motion.div
-                  key="bench"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, ease }}
-                  className="space-y-6"
-                >
+                <div className="anim-fade-up space-y-6">
                   {/* 顺序（Spec §4.1）：执行位置/Key 路径 → 表单 → 进度/结果 → 榜单 → 方法学 */}
                   <TransportSelector
                     value={transport}
@@ -234,19 +204,12 @@ export default function App() {
                     }}
                   />
                   <Methodology />
-                </motion.div>
+                </div>
               ) : (
-                <motion.div
-                  key="global"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, ease }}
-                >
+                <div className="anim-fade-up">
                   <GlobalLeaderboard />
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
             <footer className="text-center text-xs text-muted pt-6 pb-2">
               {view === "bench"

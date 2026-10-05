@@ -3,7 +3,7 @@
 // - complete 真实结果进入可比排名；partial 不入榜
 // - v1 数据迁移为遗留分区（不可排名，原值保留）
 // - 清空走稳定确认对话；删除可撤销
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const PROVIDER_URL = "https://open.bigmodel.cn/api/anthropic/v1/messages";
 
@@ -20,7 +20,7 @@ function sseBody(): string {
   ].join("\n");
 }
 
-async function fillAndRun(page: import("@playwright/test").Page, opts: { samples?: string } = {}) {
+async function fillAndRun(page: Page, opts: { samples?: string } = {}) {
   await page.getByLabel("Request URL（完整请求地址）").fill(PROVIDER_URL);
   await page.getByLabel("Model").fill("glm-5.3");
   await page.getByLabel("API Key", { exact: false }).fill("sk-e2e-test");

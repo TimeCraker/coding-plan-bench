@@ -15,7 +15,11 @@ export default defineConfig({
   },
   fullyParallel: false,
   workers: 1,
-  reporter: [["list"]],
+  reporter: [
+    ["list"],
+    // junit 原始报告（CI artifact；本地输出到 gitignored test-results/）
+    ["junit", { outputFile: "test-results/junit.xml" }],
+  ],
   use: {
     channel,
     baseURL: "http://localhost:5173",

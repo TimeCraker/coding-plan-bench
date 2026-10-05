@@ -4,7 +4,6 @@
 // - 删除：立即生效 + aria-live 撤销（不自动消失）；清空：稳定确认对话（非 3 秒文字切换）
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Trophy, Zap, Activity, Timer, Info, Undo2, X } from "lucide-react";
 import type { LeaderboardEntryV2 } from "../../../engine/types";
 import { fmtMs, fmtTps } from "../lib/format";
@@ -28,8 +27,6 @@ const METRICS: {
   { id: "tps", label: "输出速度", short: "TPS", icon: <Activity className="w-3.5 h-3.5" />, lowerBetter: false, unit: "越高越好 · 需上游 usage" },
   { id: "total", label: "总耗时", short: "Total", icon: <Timer className="w-3.5 h-3.5" />, lowerBetter: true, unit: "越低越好" },
 ];
-
-const ease = [0.16, 1, 0.3, 1] as const;
 
 interface Props {
   entries: LeaderboardEntryV2[];
@@ -69,11 +66,8 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease, delay: 0.2 }}
-      className="bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
+    <div
+      className="anim-fade-up bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
       data-testid="leaderboard"
     >
       {/* 头部：标题 + 指标切换 + 清空 */}
@@ -161,12 +155,8 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
       </div>
 
       {/* 撤销 toast（稳定存在直到用户处理，aria-live 播报） */}
-      <AnimatePresence>
-        {undoable && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+      {undoable && (
+          <div
             role="status"
             aria-live="polite"
             className="mx-3 mt-3 flex items-center gap-2.5 rounded-xl bg-primary-soft border border-primary/20 px-3.5 py-2.5 text-xs"
@@ -188,9 +178,8 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
             >
               <X className="w-3 h-3" aria-hidden="true" />
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
 
       {/* 损坏数据隔离提示 */}
       {recovery === "corrupt-v2" && (
@@ -214,8 +203,7 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
             还没有可比较的记录——完成一次测速后会出现在这里
           </p>
         ) : (
-          <motion.ul layout className="space-y-2">
-            <AnimatePresence mode="popLayout">
+          <ul className="space-y-2">
               {sorted.map((e, i) => (
                 <Row
                   key={e.id}
@@ -227,8 +215,7 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
                   onRemove={handleRemove}
                 />
               ))}
-            </AnimatePresence>
-          </motion.ul>
+          </ul>
         )}
 
         {/* 分区二：示例数据（独立，不参与上方排名） */}
@@ -258,7 +245,7 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
           </>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -310,18 +297,13 @@ function Row({
       ? "旧记录 · 条件未知"
       : "";
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.3, ease }}
-      className="relative bg-surface-2 rounded-xl overflow-hidden border border-app hover:border-strong transition-colors"
+    <li
+      className="anim-fade-up relative bg-surface-2 rounded-xl overflow-hidden border border-app hover:border-strong transition-colors"
     >
       {pct !== undefined && pct > 0 && (
         <div
           aria-hidden="true"
-          className="absolute left-0 top-0 bottom-0"
+          className="absolute left-0 top-0 bottom-0 transition-[width] duration-500 ease-out"
           style={{
             width: `${pct}%`,
             background: best
@@ -384,6 +366,6 @@ function Row({
           </button>
         </div>
       </div>
-    </motion.li>
+    </li>
   );
 }

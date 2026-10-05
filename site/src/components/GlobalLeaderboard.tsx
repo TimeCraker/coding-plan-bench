@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Brain, Coins, CreditCard, Target, Crown, Trophy, Sparkles, Info } from "lucide-react";
 
-const ease = [0.16, 1, 0.3, 1] as const;
 
 type Tab = "intelligence" | "value" | "plans" | "agent";
 
@@ -64,19 +62,12 @@ function Row({ item, i, pct, main, sub, note }: {
 }) {
   const rank = i < 3 ? RANK_STYLE[i] : null;
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.3, ease }}
-      className="relative bg-surface-2 rounded-xl overflow-hidden border border-app hover:border-strong transition-colors"
+    <li
+      className="anim-fade-up relative bg-surface-2 rounded-xl overflow-hidden border border-app hover:border-strong transition-colors"
     >
-      <motion.div
-        className="absolute left-0 top-0 bottom-0"
-        style={{ background: "linear-gradient(90deg, var(--primary), transparent)", opacity: i === 0 ? 0.12 : 0.06 }}
-        initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.6, ease, delay: 0.1 }}
+      <div
+        className="absolute left-0 top-0 bottom-0 transition-[width] duration-500 ease-out"
+        style={{ background: "linear-gradient(90deg, var(--primary), transparent)", opacity: i === 0 ? 0.12 : 0.06, width: `${pct}%` }}
       />
       <div className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: rank?.color || "transparent" }} />
       <div className="relative p-3.5 pl-5 flex items-center gap-3">
@@ -104,7 +95,7 @@ function Row({ item, i, pct, main, sub, note }: {
         </div>
         <div className="text-right shrink-0 min-w-[72px]">{main}</div>
       </div>
-    </motion.li>
+    </li>
   );
 }
 
@@ -208,12 +199,8 @@ export function GlobalLeaderboard() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, ease }}
-      className="bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
+    <div
+      className="anim-fade-up bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
     >
       {/* 头部 */}
       <div className="px-5 md:px-6 py-4 border-b border-app bg-surface-2/50">
@@ -242,16 +229,9 @@ export function GlobalLeaderboard() {
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className="relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer"
+                className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${tab === t.id ? "bg-primary" : ""}`}
                 style={{ color: tab === t.id ? "#fff" : "var(--text-muted)" }}
               >
-                {tab === t.id && (
-                  <motion.div
-                    layoutId="global-pill"
-                    className="absolute inset-0 rounded-md bg-primary"
-                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                  />
-                )}
                 <span className="relative inline-flex items-center gap-1.5">
                   {t.icon}
                   <span className="hidden sm:inline">{t.label}</span>
@@ -273,14 +253,12 @@ export function GlobalLeaderboard() {
         ) : !data || !board ? (
           <Skeleton />
         ) : (
-          <motion.ul layout className="space-y-2">
-            <AnimatePresence mode="popLayout">
+          <ul className="space-y-2">
               {board.items.map((item, i) => {
                 const { main, pct, sub, note } = renderMain(item);
                 return <Row key={`${tab}-${i}`} item={item} i={i} pct={pct} main={main} sub={sub} note={note} />;
               })}
-            </AnimatePresence>
-          </motion.ul>
+          </ul>
         )}
 
         {/* 数据来源 */}
@@ -293,6 +271,6 @@ export function GlobalLeaderboard() {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

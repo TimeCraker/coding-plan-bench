@@ -120,6 +120,24 @@
   }
 }
 
+/* ── 入场/循环动画（替代 framer-motion 的 CSS 实现；reduced-motion 由上方全局覆盖停用） ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes drift-a {
+  from { transform: translate(0, 0); }
+  to { transform: translate(80px, 40px); }
+}
+@keyframes drift-b {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-60px, 60px); }
+}
+
 @layer utilities {
   .bg-app { background-color: var(--bg); }
   .bg-surface { background-color: var(--surface); }
@@ -144,6 +162,10 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  .anim-fade-up { animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .anim-fade-in { animation: fade-in 0.3s ease-out both; }
+  .bg-drift-a { animation: drift-a 20s ease-in-out infinite alternate; }
+  .bg-drift-b { animation: drift-b 25s ease-in-out infinite alternate; }
   .grid-bg {
     background-image:
       linear-gradient(var(--border) 1px, transparent 1px),

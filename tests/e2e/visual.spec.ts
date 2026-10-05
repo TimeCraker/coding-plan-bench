@@ -1,9 +1,9 @@
 // T-009 视觉回归 e2e（AC-010）：紧凑工作台层级 snapshots。
 // 统一在 reduced-motion 下截图（CSS 动画停 + App useReducedMotion 停 JS 循环），
 // 保证跨机确定性；主题由 colorScheme emulation 控制（theme-boot 跟随系统偏好）。
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-async function settle(page: import("@playwright/test").Page) {
+async function settle(page: Page) {
   await page.waitForLoadState("networkidle");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.waitForTimeout(700); // 等待入场动画结束（reduced 下瞬时）

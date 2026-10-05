@@ -1,7 +1,6 @@
 // 结果卡（FR-005 / Spec §4.1）：完整呈现 provenance——transport、profile、
 // 完整性、成功/请求样本数、token 来源；TPS 不可用时明确说明而非伪装数值。
 
-import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, AlertTriangle, Ban } from "lucide-react";
 import type { BenchmarkRunResult } from "../../../engine/types";
 import {
@@ -12,8 +11,6 @@ import {
   TRANSPORT_COPY,
 } from "../content/copy";
 import { fmtMs, fmtTps } from "../lib/format";
-
-const ease = [0.16, 1, 0.3, 1] as const;
 
 const STATUS_ICON = {
   complete: <CheckCircle2 className="w-4 h-4 text-success" />,
@@ -28,14 +25,11 @@ export function ResultCard({ run }: { run: BenchmarkRunResult }) {
   const transportLabel = TRANSPORT_COPY[run.transport]?.label ?? run.transport;
 
   return (
-    <motion.div
+    <div
       data-testid="result-card"
       role="status"
       aria-live="polite"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease }}
-      className="bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
+      className="anim-fade-up bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
     >
       {/* 头部：状态 + 样本完整性 */}
       <div className="px-5 md:px-6 py-4 border-b border-app bg-surface-2/50 flex flex-wrap items-center gap-2.5">
@@ -126,7 +120,7 @@ export function ResultCard({ run }: { run: BenchmarkRunResult }) {
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 

@@ -21,13 +21,15 @@
     "test:responsive": "playwright test tests/e2e/responsive.spec.ts",
     "test:visual": "playwright test tests/e2e/visual.spec.ts",
     "test:docs": "vitest run tests/config/docs-config.test.ts",
-    "test:deploy-config": "vitest run tests/config/deploy-config.test.ts"
+    "test:deploy-config": "vitest run tests/config/deploy-config.test.ts",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "check:clean": "node scripts/check-clean.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run test:unit -- --run && npm run test:integration -- --run && npm run test:security && npm run test:e2e && npm run test:a11y && npm run test:responsive && npm run test:visual && npm run build && npm run check:bundle && npm run check:clean"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-http": "^2.8.0",
-    "framer-motion": "^11.18.2",
     "hono": "^4.12.32",
     "lucide-react": "^0.469.0",
     "react": "^19.0.0",

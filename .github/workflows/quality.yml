@@ -1,0 +1,86 @@
+# 全量自动验收门禁（S01 / T-011）：PR 与 main 必跑。
+# 每个子门禁独立 step（失败可定位）；locked install；原始报告上传为 artifact。
+# 测试全程不访问真实 provider（vitest no-network setup + e2e route mock）。
+
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Setup Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+      - name: Use Chromium channel on Linux
+        run: echo "PW_CHANNEL=chromium" >> "$GITHUB_ENV"
+
+      # ── 静态门禁 ──
+      - name: typecheck
+        run: npm run typecheck
+      - name: lint
+        run: npm run lint
+
+      # ── 单元 / 集成 / 安全 ──
+      - name: unit
+        run: npm run test:unit -- --run
+      - name: integration
+        run: npm run test:integration -- --run
+      - name: security (proxy boundary)
+        run: npm run test:security
+
+      # ── 浏览器 e2e / a11y / responsive / visual ──
+      - name: e2e
+        run: npm run test:e2e
+      - name: a11y
+        run: npm run test:a11y
+      - name: responsive
+        run: npm run test:responsive
+      - name: visual
+        run: npm run test:visual
+
+      # ── 构建 + bundle 预算 + 文档/部署配置 ──
+      - name: build
+        env:
+          VITE_API_BASE: https://coding-plan-bench-api.timecraker-ace.workers.dev/api
+        run: npm run build
+      - name: bundle budget (initial JS gzip ≤ 100KB)
+        run: npm run check:bundle
+      - name: docs consistency
+        run: npm run test:docs
+      - name: deploy config
+        run: npm run test:deploy-config
+
+      # ── 验证后工作区必须 clean（无未声明生成物） ──
+      - name: workspace clean
+        run: npm run check:clean
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
