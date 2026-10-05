@@ -1,8 +1,19 @@
-// 调测速 API：浏览器直调优先 → Worker/服务器回退
-// 策略：开 CORS 的 endpoint 浏览器直连（不经服务器，最安全）；失败回退到后端代理
+// 测速入口（S01）：显式 transport 编排（site/src/lib/transports）+ v1 兼容层。
+//
+// 新代码请使用 `runBench`（transports/index）或 `useBenchmarkRun` hook。
+// legacyRunBench 仅供未迁移的旧 UI 过渡：单样本 browser-direct；
+// samples>1 不再自动切代理（AUD-001 根治）——由调用方显式选择 transport。
 
-import type { Protocol } from "../../../engine/types";
+import type { BenchmarkRunResult } from "../../../engine/types";
+import { benchError } from "../../../engine/errors";
+import { validateRequestUrl } from "../../../engine/request";
+import { CPB_STANDARD_PROFILE } from "../../../engine/profiles";
+import { runBench, type RunBenchOptions } from "./transports";
 
+export type { RunBenchOptions } from "./transports";
+export { createConsentToken } from "./transports";
+
+/** v1 结果形状（旧 ResultCard 过渡使用；T-007 移除） */
 export interface BenchApiResponse {
   ttft: number;
   total: number;
@@ -14,95 +25,44 @@ export interface BenchApiResponse {
   samples: number;
 }
 
-interface BenchParams {
-  endpoint: string;
-  apiKey: string;
-  model: string;
-  protocol: Protocol;
-  prompt?: string;
-  maxTokens?: number;
-  samples?: number;
+/** 运行显式 transport 的测速（URL 结构校验前置，稳定 validation 错误） */
+export async function runExplicitBench(
+  opts: RunBenchOptions,
+): Promise<BenchmarkRunResult> {
+  const check = validateRequestUrl(opts.requestUrl);
+  if (!check.ok) {
+    throw benchError("validation", `Request URL 无效：${check.reason}`);
+  }
+  return runBench(opts);
 }
 
-/** 后端代理地址（Worker 或自服务器，可通过环境变量配） */
-const API_BASE =
-  (import.meta as unknown as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ||
-  "/api"; // 默认同源（Pages 部署时通过 _redirects 或 Worker routes 代理）
-
-/** 浏览器直调（流式采集，复用 engine 逻辑） */
-async function benchDirect(p: BenchParams): Promise<BenchApiResponse> {
-  const { bench } = await import("../../../engine/bench");
-  const r = await bench({
-    endpoint: p.endpoint,
+/** @deprecated v1 兼容：单样本 browser-direct。多样本需调用方显式选 transport。 */
+export async function legacyRunBench(p: {
+  requestUrl: string;
+  apiKey: string;
+  model: string;
+  protocol: "anthropic" | "openai";
+  samples?: number;
+  onStage?: (stage: "direct") => void;
+}): Promise<BenchApiResponse> {
+  p.onStage?.("direct");
+  const run = await runExplicitBench({
+    transport: "browser-direct",
+    requestUrl: p.requestUrl,
     apiKey: p.apiKey,
     model: p.model,
     protocol: p.protocol,
-    prompt: p.prompt ?? "Reply exactly: OK",
-    maxTokens: p.maxTokens,
-    timeoutMs: 90_000,
+    samples: 1,
+    profile: CPB_STANDARD_PROFILE,
   });
-  // 直调失败（CORS/网络）→ throw 触发回退代理
-  if (!r.success) {
-    throw new Error(r.error || "浏览器直连失败");
-  }
   return {
-    ttft: r.ttft,
-    total: r.total,
-    outputTokens: r.outputTokens,
-    inputTokens: r.inputTokens,
-    thinkingMs: r.thinkingMs,
-    success: r.success,
-    error: r.error,
+    ttft: run.aggregate.ttftMs ?? 0,
+    total: run.aggregate.totalMs,
+    outputTokens: run.aggregate.outputTokens ?? 0,
+    inputTokens: run.aggregate.inputTokens ?? 0,
+    thinkingMs: run.aggregate.thinkingMs ?? 0,
+    success: run.status === "complete",
+    error: run.samples.find((s) => s.error)?.error?.safeMessage,
     samples: 1,
   };
-}
-
-/** 经后端代理（Worker/服务器） */
-async function benchProxy(p: BenchParams): Promise<BenchApiResponse> {
-  const res = await fetch(`${API_BASE}/bench`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      endpoint: p.endpoint,
-      apiKey: p.apiKey,
-      model: p.model,
-      protocol: p.protocol,
-      prompt: p.prompt,
-      maxTokens: p.maxTokens,
-      samples: p.samples,
-    }),
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`代理请求失败 ${res.status}: ${t.slice(0, 120)}`);
-  }
-  return (await res.json()) as BenchApiResponse;
-}
-
-/**
- * 测速：先浏览器直调，CORS 失败回退后端代理。
- * 多次取样时走代理（代理支持 samples 参数）。
- */
-export async function runBench(
-  p: BenchParams,
-  onStage?: (stage: "direct" | "proxy") => void,
-): Promise<BenchApiResponse> {
-  // 多次取样直接走代理（直调只跑单次）
-  if (p.samples && p.samples > 1) {
-    onStage?.("proxy");
-    return benchProxy(p);
-  }
-  // 单次：先直调
-  try {
-    onStage?.("direct");
-    return await benchDirect(p);
-  } catch (e) {
-    // CORS 或网络失败 → 回退代理
-    onStage?.("proxy");
-    try {
-      return await benchProxy({ ...p, samples: 1 });
-    } catch {
-      throw e;
-    }
-  }
 }

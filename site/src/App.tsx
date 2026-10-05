@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Gauge, Shield, Coins, Brain, TrendingDown } from "lucide-react";
 import type { LeaderboardEntry } from "../../engine/types";
 import { initTheme, toggleTheme, getTheme } from "./lib/theme";
-import { runBench, type BenchApiResponse } from "./lib/api";
+import { legacyRunBench, type BenchApiResponse } from "./lib/api";
 import {
   loadLeaderboard,
   addEntry,
@@ -36,12 +36,12 @@ export default function App() {
     setLoading(true);
     setResult(null);
     try {
-      const r = await runBench({
-        endpoint: v.endpoint,
+      // 过渡期：单样本 browser-direct（samples>1 不再自动切代理，T-007 接显式 transport UI）
+      const r = await legacyRunBench({
+        requestUrl: v.endpoint,
         apiKey: v.apiKey,
         model: v.model,
         protocol: v.protocol,
-        samples: v.samples,
       });
       setResult(r);
       if (r.success) {
