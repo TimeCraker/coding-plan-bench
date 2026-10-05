@@ -25,7 +25,7 @@ observed_handoff_revision: 1
   - Commit: `chore(quality): establish full-repo verification baseline`
   - Evidence: done — exit 0 全部：`npm run typecheck`（8 个既有类型错误清零：fetchResults.ts 失效 bench/types 引用+ImportMetaEnv、api.ts 未用 buildDirectBody+prompt 可空、Leaderboard.tsx 未用 fmtTime、GlobalLeaderboard.tsx unknown-as-ReactNode/未用 maxCost/ImportMetaEnv）；`npm run lint`（修复 App.tsx/useCountUp.ts react-hooks/set-state-in-effect 2 处）；`npm run test:unit -- --run --passWithNoTests`（code 0, no test files yet）；`npm run build`（vite 7.3.6, 1950 modules, exit 0）。`npx tsc --noEmit --listFiles` 确认 root files 含 `engine/bench.ts`、`site/src/App.tsx`（仓库内 21 个源文件入列）。tsconfig include=engine/server/src/site/src/tests+根配置，paths `@/*`→site/src/* 与 vite.config 一致；tsbuildinfo 已 untrack+删除并 gitignore；playwright channel=msedge 免下载浏览器；vitest setup tests/setup/no-network.ts 机械禁止真实网络。注：App.tsx/useCountUp.ts/GlobalLeaderboard.tsx 为 lint/typecheck 门禁必需的静态错误修复（Spec §5.1 site/src/** 允许、超出 Tasks Files 列表 3 个文件）。this task commit
 
-- [ ] T-002 固化 benchmark profile、结果和错误领域契约
+- [x] T-002 固化 benchmark profile、结果和错误领域契约
   - Covers: FR-002, FR-003, FR-004, FR-005, FR-008, NFR-002, AC-001, AC-002, AC-005, AC-006
   - Depends on: T-001
   - Evidence source: automated
@@ -34,7 +34,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:unit -- --run tests/unit/types.test.ts tests/unit/profiles.test.ts && npm run typecheck`；schema/profile/hash/错误码 fixtures 全通过
   - Definition of done: 指标和状态不再依赖布尔 `success`；profile/measurement/schema 版本可序列化且有测试锁定；Key 不属于任何可持久化 result 类型。
   - Commit: `feat(engine): define versioned benchmark contracts`
-  - Evidence: pending
+  - Evidence: done — `npm run test:unit -- --run tests/unit/types.test.ts tests/unit/profiles.test.ts` exit 0（21 tests：schema=2/measurement=1 字面量、SAMPLE_COUNTS=[1,3,5]、sampleInvariants 拒负值/NaN/Infinity/complete-无正文/tps-无tokens、ERROR_CODES 12 个与 Spec §4.5 一致、BenchmarkRunResult JSON 不含 apiKey/Authorization/x-api-key）；红阶段确认：实现前同一命令 2 files failed（模块不存在）。`npm run typecheck` exit 0。cpb-standard@1：prompt >120 字符（含三函数代码生成任务，替代 Reply exactly: OK）、maxTokens=1024、temperature=0、timeoutMs=90s；promptSha256 与 node:crypto 交叉验证一致，sha256Hex 通过 FIPS 180-4 公开向量+UTF-8 中文+多块长输入。measurement.ts 时间线 reducer（requestStart/firstReasoning/firstText/lastText/streamEnd）与 aggregate.ts（逐指标中位数、TPS 逐样本后中位数、any-cancelled→cancelled）以纯函数落地，未接线 bench.ts。this task commit
 
 - [ ] T-003 重写 SSE parser 与双协议事件适配器
   - Covers: FR-004, NFR-002, AC-001, AC-005
