@@ -2,7 +2,7 @@
 
 > 可信测速台 · 选择执行位置，测量 **TTFT / TPS / Total**，同条件榜单对比
 
-支持 Anthropic 兼容与 OpenAI 兼容双协议服务。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` vs `glm-5.3-flash` 同 key 直对比），表单一键快选，CLI 一条命令跑完编码用例矩阵。
+支持 Anthropic 兼容与 OpenAI 兼容双协议服务。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` / `glm-5.3-flash` / `glm-5.3-flashx` 同 key 三档直对比，外加方舟 / 千帆 / DeepSeek / Kimi 渠道），表单一键快选，CLI 一条命令跑完编码用例矩阵。
 
 🌐 **[在线使用](https://coding-plan-bench.pages.dev/)** ｜ 💻 **[下载 Windows 本地版](https://github.com/TimeCraker/coding-plan-bench/releases)**
 
@@ -56,15 +56,27 @@
 
 ## 模型矩阵（glm-5.3 世代）
 
-模型矩阵的单一事实源在 [`engine/models.ts`](engine/models.ts)：智谱 `glm-5.3` / `glm-5.3-flash`（同一把 `ZHIPU_API_KEY`）+ 百度 `DeepSeek-V4.1-Flash` 占位 + GLM-5.2 三渠道存量对照。两处消费：
+模型矩阵的单一事实源在 [`engine/models.ts`](engine/models.ts)，2026-10-06 依各厂官方文档调研更新；**新增渠道项均未经本台实测**，端点与模型 ID 以官方文档核验为准：
+
+| 渠道 | 模型 | envVar | 状态 |
+|------|------|--------|------|
+| 智谱 | `glm-5.3` / `glm-5.3-flash` / `glm-5.3-flashx` | `ZHIPU_API_KEY`（一把 key 三档直对比，flashx 官方标称 200 tps） | glm-5.3/flash 已实测，flashx 未实测 |
+| 火山方舟 | `glm-5.3[1m]` | `VOLCENGINE_CODING_API_KEY` | 未实测 |
+| 百度千帆 | `glm-5.3` / `deepseek-v4.1-flash` | `QIANFAN_API_KEY` | 未实测 |
+| DeepSeek 官方 | `deepseek-flash` | `DEEPSEEK_API_KEY` | 未实测；Anthropic 兼容端点官方确认，峰谷计价 |
+| Kimi 官方 | `kimi-k3` | `KIMI_API_KEY` | 未实测；官方 Anthropic Messages API 兼容端点 |
+
+另有 GLM-5.2 三渠道存量对照（智谱 / 方舟 / 千帆，2026-07-31 实测过）。两处消费：
 
 - **网站快选**：测速表单顶部芯片，点击预填完整 Request URL / model / 协议（key 永不预填）
 - **CLI 矩阵跑分**：4 条区分档位的编码用例 × 矩阵中所有有 key 的模型，串行 + 间隔频控 + 失败重试，产出中位数汇总与可复现的原始 JSON：
 
 ```bash
-cp .env.example .env   # 填 ZHIPU_API_KEY
+cp .env.example .env   # 填 ZHIPU_API_KEY；其余渠道按上表 envVar 增设（key 缺失自动跳过）
 npm run bench:matrix   # 结果写入 results/data/，报告见 results/
 ```
+
+> 项目代理目前仅放行智谱端点（allowlist 由运营方配置）；方舟 / 千帆 / DeepSeek / Kimi 渠道请走浏览器直连或本地 App。
 
 最新一轮实测（2026-10-05，temperature=0，32/32 成功）：**GLM-5.3 端到端中位 19.9s / 89 TPS，GLM-5.3-Flash 34.7s / 64 TPS；中高难用例上两档答案质量打平**——详见 [results/2026-10-05-glm-5.3-matrix.md](results/2026-10-05-glm-5.3-matrix.md)。
 
