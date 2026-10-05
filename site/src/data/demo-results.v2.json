@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "sourceLabel": "GLM-5.3 世代矩阵实测（2026-10-05 · CLI 串行 · temperature=0 · 8 样本/模型）",
+    "reportUrl": "https://github.com/TimeCraker/coding-plan-bench/blob/main/results/2026-10-05-glm-5.3-matrix.md",
+    "profile": {
+      "id": "zhipu-matrix-cli",
+      "version": 1
+    }
+  },
+  "entries": [
+    {
+      "schemaVersion": 2,
+      "id": "demo-zhipu-glm53",
+      "label": "智谱 GLM-5.3（示例）",
+      "protocol": "anthropic",
+      "requestUrlDisplay": "https://open.bigmodel.cn/api/anthropic/v1/messages",
+      "model": "glm-5.3",
+      "ranAt": "2026-10-05T08:07:39.753Z",
+      "rankable": false,
+      "demo": true,
+      "run": {
+        "schemaVersion": 2,
+        "measurementVersion": 1,
+        "profile": {
+          "id": "zhipu-matrix-cli",
+          "version": 1,
+          "promptSha256": "demo"
+        },
+        "transport": "browser-direct",
+        "status": "complete",
+        "requestedSamples": 5,
+        "successCount": 5,
+        "aggregate": {
+          "ttftMs": 1389,
+          "thinkingMs": null,
+          "generationMs": 18554,
+          "totalMs": 19943,
+          "outputTokens": 1584,
+          "inputTokens": null,
+          "tps": 89,
+          "tokenSource": "provider"
+        },
+        "samples": []
+      }
+    },
+    {
+      "schemaVersion": 2,
+      "id": "demo-zhipu-glm53-flash",
+      "label": "智谱 GLM-5.3-Flash（示例）",
+      "protocol": "anthropic",
+      "requestUrlDisplay": "https://open.bigmodel.cn/api/anthropic/v1/messages",
+      "model": "glm-5.3-flash",
+      "ranAt": "2026-10-05T08:07:39.753Z",
+      "rankable": false,
+      "demo": true,
+      "run": {
+        "schemaVersion": 2,
+        "measurementVersion": 1,
+        "profile": {
+          "id": "zhipu-matrix-cli",
+          "version": 1,
+          "promptSha256": "demo"
+        },
+        "transport": "browser-direct",
+        "status": "complete",
+        "requestedSamples": 5,
+        "successCount": 5,
+        "aggregate": {
+          "ttftMs": 892,
+          "thinkingMs": null,
+          "generationMs": 33808,
+          "totalMs": 34700,
+          "outputTokens": 2116,
+          "inputTokens": null,
+          "tps": 64,
+          "tokenSource": "provider"
+        },
+        "samples": []
+      }
+    }
+  ]
+}

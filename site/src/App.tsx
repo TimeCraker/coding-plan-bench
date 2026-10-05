@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { TransportKind } from "../../engine/types";
 import { initTheme, toggleTheme, getTheme } from "./lib/theme";
@@ -24,17 +24,23 @@ import {
   FOOTER_BENCH,
 } from "./content/copy";
 import {
-  loadLeaderboard,
-  removeEntry,
   clearLeaderboard,
+  loadLeaderboard,
+  makeEntryFromRun,
+  mergeExternalSnapshot,
+  removeEntry,
+  resetLocalData,
+  restoreEntry,
 } from "./lib/storage";
-import type { LeaderboardEntry } from "../../engine/types";
+import type { LeaderboardEntryV2 } from "../../engine/types";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export default function App() {
   // 纯客户端 SPA：localStorage 在 lazy initializer 中同步可读，避免 effect 级联渲染
-  const [entries, setEntries] = useState<LeaderboardEntry[]>(() => loadLeaderboard());
+  const [{ entries: stored, recovery }, setStored] = useState(() => loadLeaderboard());
+  const [entries, setEntries] = useState<LeaderboardEntryV2[]>(stored);
+  const lastForm = useRef<FormValues | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     initTheme();
     return getTheme();
@@ -50,6 +56,7 @@ export default function App() {
   const run = useBenchmarkRun();
 
   const handleRun = (v: FormValues) => {
+    lastForm.current = v;
     void run.start({
       transport,
       requestUrl: v.requestUrl,
@@ -59,6 +66,43 @@ export default function App() {
       samples: v.samples === 3 || v.samples === 5 ? v.samples : 1,
     });
   };
+
+  // 完整结果入榜（partial/failed/cancelled 不入）；只有 complete 参与 rankable
+  useEffect(() => {
+    if (run.result?.status === "complete" && lastForm.current) {
+      const v = lastForm.current;
+      const entry = makeEntryFromRun({
+        label: v.label,
+        protocol: v.protocol,
+        requestUrl: v.requestUrl,
+        model: v.model,
+        run: run.result,
+      });
+      setEntries((prev) => {
+        const merged = mergeExternalSnapshot(prev, [entry]);
+        return merged;
+      });
+      // 持久化（写入 v2 key；makeEntryFromRun 已保证 rankable 语义）
+      import("./lib/storage").then(({ addEntry }) => {
+        setEntries(addEntry(entry));
+      });
+    }
+  }, [run.result]);
+
+  // 多标签页：storage event 同步（ranAt/id 去重合并）
+  useEffect(() => {
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key !== "cpb:leaderboard:v2" || ev.newValue === null) return;
+      try {
+        const snapshot = JSON.parse(ev.newValue) as LeaderboardEntryV2[];
+        setEntries((prev) => mergeExternalSnapshot(prev, snapshot));
+      } catch {
+        // 其他标签页写入损坏数据：忽略，本页数据不受影响
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const handleTheme = () => setTheme(toggleTheme());
 
@@ -172,10 +216,21 @@ export default function App() {
                   )}
                   <Leaderboard
                     entries={entries}
-                    onRemove={(id) => setEntries(removeEntry(id))}
+                    onRemove={(id) => {
+                      const r = removeEntry(id);
+                      setEntries(r.entries);
+                      return r;
+                    }}
+                    onRestore={(e) => setEntries(restoreEntry(e))}
                     onClear={() => {
                       clearLeaderboard();
                       setEntries([]);
+                    }}
+                    recovery={recovery}
+                    onReset={() => {
+                      resetLocalData();
+                      setStored(loadLeaderboard());
+                      setEntries(loadLeaderboard().entries);
                     }}
                   />
                   <Methodology />

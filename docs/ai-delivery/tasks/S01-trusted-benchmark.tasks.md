@@ -99,7 +99,7 @@ observed_handoff_revision: 1
   - Commit: `feat(ui): make benchmark trust and progress explicit`
   - Evidence: done — 红阶段：实现前 `npx playwright test tests/e2e/benchmark-flow.spec.ts tests/e2e/copy-provenance.spec.ts` 全部失败（选择器不存在）；实现后官方 Verify `npm run test:e2e -- --grep "transport consent|copy and provenance|progress and cancel"` exit 0（9 tests）。覆盖：默认 browser-direct 提交后 provider 恰 1 次且代理 0 次；选项目代理→consent 面板（含“Worker 内存转发”实质文案）→拒绝则 0 请求→同意后恰 1 次代理且结果标 trusted-proxy；3 样本显示进度 1/3+取消按钮→取消后状态“已取消”且 provider 请求数<3；页面无“任意模型/不上传/本机当前真实表现/终极判据”（site/src grep 0 命中，README 剩余 2 处归 T-010）；协议切换 placeholder 完整地址（/v1/messages ↔ /v1/chat/completions）；结果卡展示 transport/profile/完整状态/成功样本 x/y/token 来源，Key 不出现在结果文本；方法学含指标口径与中位数说明。实现：copy.ts 文案单一事实源（TRANSPORT_COPY/CONSENT/METRIC/STATUS/ERROR_ADVICE 每错误码可执行建议）；App 首屏重排（紧凑说明→TransportSelector→BenchForm→RunProgress(consent+进度+取消)→ResultCard→Leaderboard→Methodology），大 Hero 移除；useBenchmarkRun 接线；BenchForm 改 Request URL 完整地址+协议 radio+快选预填完整 URL，运行时 <style> 移除（纯 Tailwind utility）；useReducedMotion 停止背景循环（T-009 范围提前完成）。回归：typecheck/lint exit 0、unit 140、integration 59、build exit 0（TMP/TEMP 绕法）。v1 榜单暂存显示（新结果不写入 v1 存储，v2 存储归 T-008）。this task commit
 
-- [ ] T-008 迁移本地数据并建立可比较榜单
+- [x] T-008 迁移本地数据并建立可比较榜单
   - Covers: FR-003, FR-005, FR-008, NFR-002, NFR-005, AC-002, AC-006
   - Depends on: T-004, T-006
   - Evidence source: automated
@@ -108,7 +108,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:unit -- --run tests/unit/storage.test.ts tests/unit/comparability.test.ts && npm run test:e2e -- --grep "comparable leaderboard"`；旧/损坏/多标签页/示例/partial fixtures 通过
   - Definition of done: 旧数据不丢但不伪装可排名；demo 不获得正式“最优”；只有兼容 complete 数据参与对应 metric 排名；清除行为可恢复/确认。
   - Commit: `feat(leaderboard): compare only compatible benchmark runs`
-  - Evidence: pending
+  - Evidence: done — `npm run test:unit -- --run tests/unit/storage.test.ts tests/unit/comparability.test.ts` exit 0（19 tests）+ `npm run test:e2e -- --grep "comparable leaderboard"` exit 0（5 tests）。覆盖：v1→v2 迁移（原值备份 cpb:leaderboard:v1-backup、幂等二次 load 不重复、legacy:true/rankable:false/run 缺失不推断 transport/profile/tokenSource、legacyMetrics 保留原值、URL 规范化去 query、v1 key 不主动删除）；损坏 v2 隔离（recovery=corrupt-v2 原值不覆盖+重置本地数据按钮）；demo 种子首次注入不重复；complete 才 rankable（partial/null）；makeEntryFromRun JSON 不含 apiKey/sk-；多标签页 mergeExternalSnapshot 按 id 去重 ranAt 排序；comparability key=profile id@version/measurementVersion/transport/protocol，任一不同即不同组；legacy/demo/partial/cancelled/failed→null；TPS 排名额外要求 tps 非 null（TTFT/Total 不受 token source 影响）；demo 不同 profile 不进真实组。e2e：示例分区独立展示不参与可比排名；complete 入榜（“可比 1 条”）而 partial 不入；v1 addInitScript 预置→遗留分区+备份写入+v1 保留；清空稳定确认（取消保留/确认清空）；删除→undo toast→撤销恢复。site/public/results.json 已删（v1 失效数据路径；fetchResults.ts 已于 T-001 删除；leaderboards.json 为 owner 能力榜数据保留）。App.tsx 接线 v2 入榜+storage event 同步+recovery 重置——超出 Tasks Files 一笔（Spec §5.1 site/src/** 允许）。demo 数据 successCount/requestedSamples 用类型合法值 5（8 样本事实由 meta.sourceLabel 说明）。回归：typecheck/lint 0、unit 159、integration 59、build exit 0。this task commit
 
 - [ ] T-009 完成响应式视觉系统、无障碍和 reduced-motion
   - Covers: FR-010, FR-011, NFR-003, NFR-004, AC-009, AC-010

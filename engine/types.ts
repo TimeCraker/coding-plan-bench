@@ -128,6 +128,8 @@ export interface BenchmarkRunResult {
 /**
  * 可比较榜单条目：组合 run 的 provenance + 用户标注。
  * 保存前必须把 Request URL 规范化为 origin + pathname（不存 query / credentials）。
+ * v1 迁移记录（legacy）不携带 run：transport/profile/tokenSource 未知即不推断，
+ * 原始数值保留在 legacyMetrics 中仅供查看，永不参与排名。
  */
 export interface LeaderboardEntryV2 {
   schemaVersion: 2;
@@ -138,13 +140,21 @@ export interface LeaderboardEntryV2 {
   requestUrlDisplay: string;
   model: string;
   ranAt: string;
-  run: BenchmarkRunResult;
+  run?: BenchmarkRunResult;
   /** v1 迁移记录：无 provenance，永不参与排名 */
   legacy?: true;
   /** 是否可进入默认比较视图（legacy / partial / demo 为 false） */
   rankable: boolean;
   /** 示例数据（独立分区展示） */
   demo?: true;
+  /** 仅 legacy：v1 原始数值（不可排名） */
+  legacyMetrics?: {
+    ttft: number;
+    tps: number;
+    total: number;
+    outputTokens: number;
+    samples: number;
+  };
 }
 
 // ───────────────────────── 不变量校验（纯函数） ─────────────────────────
