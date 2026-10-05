@@ -65,7 +65,7 @@ export function BenchForm({ onRun, busy }: Props) {
           </div>
           <h2 className="text-[15px] font-semibold text-app">测一个模型</h2>
         </div>
-        <fieldset className="inline-flex bg-surface-2 rounded-lg p-0.5 border border-app">
+        <fieldset className="inline-flex bg-surface-2 rounded-lg p-0.5 border border-app min-w-0">
           <legend className="sr-only">协议</legend>
           {(["anthropic", "openai"] as Protocol[]).map((p) => (
             <label

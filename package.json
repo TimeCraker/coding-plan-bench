@@ -16,7 +16,10 @@
     "test:unit": "vitest run",
     "test:integration": "vitest run tests/integration",
     "test:security": "vitest run tests/integration/proxy-security.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
+    "test:responsive": "playwright test tests/e2e/responsive.spec.ts",
+    "test:visual": "playwright test tests/e2e/visual.spec.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",
@@ -29,6 +32,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@cloudflare/workers-types": "^5.20260731.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",

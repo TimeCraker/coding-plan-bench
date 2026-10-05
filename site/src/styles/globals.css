@@ -14,7 +14,7 @@
   --surface-glass: rgba(255, 255, 255, 0.72);
   --surface-2: #f4f6f9;
   --text: #0a0e1a;
-  --text-muted: #5a6478;
+  --text-muted: #3f4857;
   --border: #e8ecf2;
   --border-strong: #d1d8e3;
   --primary: #2563eb;
@@ -37,7 +37,7 @@
   --surface-glass: rgba(15, 19, 28, 0.72);
   --surface-2: #161b26;
   --text: #e8ecf4;
-  --text-muted: #8b94a8;
+  --text-muted: #a3adbf;
   --border: #1e2533;
   --border-strong: #2a3344;
   --primary: #4f8ef7;
@@ -88,6 +88,35 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ── 无障碍基线 ── */
+@layer base {
+  /* 键盘焦点环：全局可见、与主题一致（不依赖 :focus 的鼠标样式） */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* 触控目标：交互控件最小 44×44 CSS px（移动端；桌面保持紧凑） */
+  @media (max-width: 767px) {
+    button:not(:disabled),
+    [role="tab"],
+    a[href] {
+      min-height: 44px;
+    }
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 }
 

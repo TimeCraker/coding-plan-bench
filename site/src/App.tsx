@@ -153,7 +153,7 @@ export default function App() {
         </>
       )}
 
-      <div className="relative flex">
+      <div className="relative flex flex-col md:flex-row">
         <Sidebar view={view} onView={setView} theme={theme} onTheme={handleTheme} />
 
         <div className="flex-1 min-w-0">

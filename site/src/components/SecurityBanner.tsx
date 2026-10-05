@@ -24,7 +24,7 @@ export function SecurityBanner() {
               strokeWidth={2}
               aria-hidden="true"
             />
-            <span className="text-app flex-1">{SECURITY_BANNER}</span>
+            <span className="text-app flex-1 min-w-0">{SECURITY_BANNER}</span>
             <a
               href="https://github.com/TimeCraker/coding-plan-bench/releases"
               target="_blank"

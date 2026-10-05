@@ -43,7 +43,7 @@ function TypeTag({ type }: { type?: string }) {
   const open = type === "开源";
   return (
     <span
-      className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium shrink-0 ${open ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface border border-app text-muted"}`}
+      className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium shrink-0 ${open ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-surface border border-app"}`}
     >
       {type}
     </span>
@@ -52,9 +52,9 @@ function TypeTag({ type }: { type?: string }) {
 
 function MiniTag({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "blue" | "purple" }) {
   const cls = {
-    muted: "bg-surface border border-app text-muted",
-    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    purple: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    muted: "bg-surface border border-app",
+    blue: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    purple: "bg-purple-500/10 text-purple-700 dark:text-purple-300",
   }[tone];
   return <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium shrink-0 ${cls}`}>{children}</span>;
 }

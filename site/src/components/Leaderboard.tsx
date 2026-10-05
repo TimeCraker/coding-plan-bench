@@ -130,8 +130,13 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
         </div>
 
         {/* 指标切换（同一条件组内按当前指标排序） */}
-        <div className="flex items-center justify-between flex-wrap gap-2 mt-4">
-          <div className="inline-flex bg-surface-2 rounded-lg p-0.5 border border-app" role="tablist" aria-label="排序指标">
+        <div className="mt-4 space-y-2">
+          <div className="w-full overflow-x-auto">
+          <div
+            className="inline-flex bg-surface-2 rounded-lg p-0.5 border border-app"
+            role="tablist"
+            aria-label="排序指标"
+          >
             {METRICS.map((m) => (
               <button
                 key={m.id}
@@ -148,7 +153,8 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
               </button>
             ))}
           </div>
-          <span className="text-[11px] text-muted tabular">
+          </div>
+          <span className="block text-[11px] text-muted tabular">
             排序：{cfg.label} · <span className="text-primary font-medium">{cfg.unit} {cfg.lowerBetter ? "↓" : "↑"}</span>
           </span>
         </div>
@@ -338,17 +344,17 @@ function Row({
               </span>
             )}
             {demo && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app text-muted shrink-0">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app shrink-0" style={{ color: "var(--text)" }}>
                 示例
               </span>
             )}
             {legacy && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app text-muted shrink-0">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app shrink-0" style={{ color: "var(--text)" }}>
                 遗留 · 不可排名
               </span>
             )}
           </div>
-          <div className="text-[11px] text-muted truncate tabular mt-0.5">
+          <div className="text-[11px] truncate tabular mt-0.5" style={{ color: "var(--text)" }}>
             {entry.model} · {entry.requestUrlDisplay.replace(/^https?:\/\//, "").split("/")[0]}
             {provenance ? ` · ${provenance}` : ""}
           </div>
@@ -370,7 +376,7 @@ function Row({
         <div className="flex items-center justify-center w-8 shrink-0">
           <button
             onClick={() => onRemove(entry.id)}
-            className="p-2 rounded-lg text-muted hover:text-red-500 hover:bg-surface transition-colors cursor-pointer"
+            className="p-2.5 min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center rounded-lg text-muted hover:text-red-500 hover:bg-surface transition-colors cursor-pointer"
             aria-label={`删除 ${entry.label || entry.model}`}
             data-testid="remove-entry"
           >

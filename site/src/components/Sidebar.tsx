@@ -42,6 +42,7 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
               onClick={() => onView(n.id)}
               className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-left"
               style={{ color: view === n.id ? "#fff" : "var(--text)" }}
+              data-active={view === n.id}
             >
               {view === n.id && (
                 <motion.div
@@ -53,7 +54,7 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
               <span className="relative z-10 shrink-0">{n.icon}</span>
               <span className="relative z-10 min-w-0">
                 <span className="block text-[13px] font-semibold leading-tight">{n.label}</span>
-                <span className="block text-[10px] leading-tight opacity-70 truncate">{n.desc}</span>
+                <span className={`block text-[10px] leading-tight truncate ${view === n.id ? "text-white" : "text-muted"}`}>{n.desc}</span>
               </span>
             </button>
           ))}
@@ -98,10 +99,10 @@ export function Sidebar({ view, onView, theme, onTheme }: Props) {
             <span className="text-[13px] font-bold text-app tracking-tight">Coding Plan Bench</span>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={onTheme} className="p-2 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="切换主题">
+            <button onClick={onTheme} className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="切换主题">
               {theme === "light" ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}
             </button>
-            <a href="https://github.com/TimeCraker/coding-plan-bench" target="_blank" rel="noreferrer" className="p-2 rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="GitHub">
+            <a href="https://github.com/TimeCraker/coding-plan-bench" target="_blank" rel="noreferrer" className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="GitHub（源码仓库）">
               <Github className="w-[18px] h-[18px]" />
             </a>
           </div>

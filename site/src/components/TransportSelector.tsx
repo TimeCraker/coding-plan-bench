@@ -16,7 +16,7 @@ export function TransportSelector({ value, available, onChange }: Props) {
   return (
     <fieldset
       data-testid="transport-selector"
-      className="bg-surface rounded-2xl border border-app shadow-md-card p-5"
+      className="bg-surface rounded-2xl border border-app shadow-md-card p-5 min-w-0"
     >
       <legend className="text-[13px] font-semibold text-app px-1">
         执行位置（决定 Key 路径）
@@ -58,7 +58,7 @@ export function TransportSelector({ value, available, onChange }: Props) {
         })}
       </div>
       {!available.includes("tauri-local") && (
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted">
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
           <Download className="w-3 h-3 shrink-0" />
           {LOCAL_APP_HINT}
           <a

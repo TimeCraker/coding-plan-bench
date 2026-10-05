@@ -110,7 +110,7 @@ observed_handoff_revision: 1
   - Commit: `feat(leaderboard): compare only compatible benchmark runs`
   - Evidence: done — `npm run test:unit -- --run tests/unit/storage.test.ts tests/unit/comparability.test.ts` exit 0（19 tests）+ `npm run test:e2e -- --grep "comparable leaderboard"` exit 0（5 tests）。覆盖：v1→v2 迁移（原值备份 cpb:leaderboard:v1-backup、幂等二次 load 不重复、legacy:true/rankable:false/run 缺失不推断 transport/profile/tokenSource、legacyMetrics 保留原值、URL 规范化去 query、v1 key 不主动删除）；损坏 v2 隔离（recovery=corrupt-v2 原值不覆盖+重置本地数据按钮）；demo 种子首次注入不重复；complete 才 rankable（partial/null）；makeEntryFromRun JSON 不含 apiKey/sk-；多标签页 mergeExternalSnapshot 按 id 去重 ranAt 排序；comparability key=profile id@version/measurementVersion/transport/protocol，任一不同即不同组；legacy/demo/partial/cancelled/failed→null；TPS 排名额外要求 tps 非 null（TTFT/Total 不受 token source 影响）；demo 不同 profile 不进真实组。e2e：示例分区独立展示不参与可比排名；complete 入榜（“可比 1 条”）而 partial 不入；v1 addInitScript 预置→遗留分区+备份写入+v1 保留；清空稳定确认（取消保留/确认清空）；删除→undo toast→撤销恢复。site/public/results.json 已删（v1 失效数据路径；fetchResults.ts 已于 T-001 删除；leaderboards.json 为 owner 能力榜数据保留）。App.tsx 接线 v2 入榜+storage event 同步+recovery 重置——超出 Tasks Files 一笔（Spec §5.1 site/src/** 允许）。demo 数据 successCount/requestedSamples 用类型合法值 5（8 样本事实由 meta.sourceLabel 说明）。回归：typecheck/lint 0、unit 159、integration 59、build exit 0。this task commit
 
-- [ ] T-009 完成响应式视觉系统、无障碍和 reduced-motion
+- [x] T-009 完成响应式视觉系统、无障碍和 reduced-motion
   - Covers: FR-010, FR-011, NFR-003, NFR-004, AC-009, AC-010
   - Depends on: T-007, T-008
   - Evidence source: automated
@@ -119,7 +119,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:a11y && npm run test:responsive && npm run test:visual`；375/768/1024/1440 和 light/dark/reduced-motion snapshots 通过，0 critical/serious，页面级无横向滚动
   - Definition of done: 移动端没有 hover-only 操作；所有 icon-only 控件有名称；键盘完成主流程；设计文档与 token/组件实现一致。
   - Commit: `feat(design): deliver accessible responsive workbench`
-  - Evidence: pending
+  - Evidence: done — `npm run test:a11y` exit 0（6 tests，连续 3 轮稳定：Axe 双视图 0 critical/serious；icon-only 控件 accessible name 显式核对；键盘主流程 Enter 提交+焦点环；tablist/tab/aria-selected；fieldset+legend）+ `npm run test:responsive` exit 0（7 tests：375/768/1024/1440 页面级 0 横滚+核心区块可见；375 删除按钮常显 opacity≠0 且 ≥44×44 直点成功；指标控件可访问滚动+无页面横滚；375 全流程提交）+ `npm run test:visual` exit 0（5 tests：1440/375 × light/dark + reduced-motion 双帧稳定快照，baseline 已提交 tests/e2e/visual.spec.ts-snapshots）。修复清单：根布局 flex-col md:flex-row（移动端 Sidebar 不再与主区水平挤压，375 横滚根因）；SecurityBanner/TransportSelector 长文本 min-w-0/flex-wrap；指标 tablist 外包 w-full overflow-x-auto 容器；--text-muted 加深至 #3f4857（light）/暗色同步（10-11px 小字 ≥4.5:1）；GlobalLeaderboard emerald/blue/purple-600→700 档；Sidebar 激活态 desc 白色；移动端 icon 控件 min-h/w-11；ResultCard role=status aria-live；全局 :focus-visible 焦点环；theme-boot.js 外链防闪烁脚本+theme.ts 跟随 prefers-color-scheme；index.html description 去"任意模型"。设计文档：site/design-system/MASTER.md 更新（S01 信息层级/对比度基线/44px 触控/焦点环/无 hover-only/min-w-0 规则与实现同步）；设计系统合并为单一事实源=owner prior commit 63f309d（根目录重复 design-system 已删，未重建）。useReducedMotion/静态 Tailwind（无运行时 <style>）已随 T-007 落地。回归：typecheck/lint 0、unit 159、integration 59、e2e（flow+copy+leaderboard）13 全过。this task commit
 
 - [ ] T-010 统一 Cloudflare 部署、安全 headers 与项目文档
   - Covers: FR-007, FR-010, FR-012, NFR-001, NFR-005, AC-004, AC-008, AC-012
