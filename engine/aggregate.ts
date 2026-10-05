@@ -60,7 +60,10 @@ export function aggregateRun(
     generationMs: medianOrNull(
       ok.map((s) => s.generationMs).filter((v): v is number => v !== null),
     ),
-    totalMs: median(ok.map((s) => s.totalMs)),
+    // totalMs：成功样本中位数；0 成功时退回全部样本墙钟（诊断价值，不可排名）
+    totalMs: median(
+      ok.length > 0 ? ok.map((s) => s.totalMs) : samples.map((s) => s.totalMs),
+    ),
     outputTokens: medianOrNull(
       ok.map((s) => s.outputTokens).filter((v): v is number => v !== null),
     ),

@@ -50,11 +50,12 @@ observed_handoff_revision: 1
 ")`，`"
 
 "` 中两个 
- 不相邻故 CRLF 流 0 事件（见 git 历史 engine/parse-sse.ts@6064a50 前）；新 createSSEParser 状态机对 CRLF_STREAM 解析 2 事件、1 字节粒度 chunk 切分与整流等价（LF/CRLF）、/
+ 不相邻故 CRLF 流 0 事件（见 git 历史 engine/parse-sse.ts@6064a50 前）；新 createSSEParser 状态机对 CRLF_STREAM 解析 2 事件、1 字节粒度 chunk 切分与整流等价（LF/CRLF）、
+/
  分属两 chunk 安全。覆盖：多 data: 行 
  拼接、comment/heartbeat、event 透传、无 data 不 dispatch、EOF 尾事件、CR-only、UTF-8 多字节跨 chunk + decoder flush（ReadableStream 集成）。协议分层：anthropic/openai adapter 输出 typed ProtocolEvent（usage 覆盖式、text/thinking 非空才发、finish、流内 error 只透传类型枚举不回显 body）；非法 JSON/非对象 JSON 抛 ProtocolParseError（code=protocol/parse）不静默；未知合法事件返回 []。legacy iterSSEEvents 保留为过渡 JSON 便利层（内部已用新 parser，CRLF bug 随之修复），T-004 删除。this task commit
 
-- [ ] T-004 重建单样本计时与多样本聚合
+- [x] T-004 重建单样本计时与多样本聚合
   - Covers: FR-003, FR-004, FR-005, FR-006, NFR-002, AC-001, AC-002
   - Depends on: T-003
   - Evidence source: automated
@@ -63,7 +64,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:unit -- --run tests/unit/measurement.test.ts tests/unit/aggregate.test.ts && npm run test:integration -- --run tests/integration/bench.test.ts`；空流/仅正文/partial/cancel 全符合 AC-001/002
   - Definition of done: 不存在负/NaN/Infinity 指标；仅正文 thinking 为 null；空流 failed；partial 不可排名；默认 profile 足以采集吞吐且版本入结果。
   - Commit: `fix(engine): make benchmark metrics reproducible`
-  - Evidence: pending
+  - Evidence: done — `npm run test:unit -- --run tests/unit/measurement.test.ts tests/unit/aggregate.test.ts` exit 0（18 tests）+ `npm run test:integration -- --run tests/integration/bench.test.ts` exit 0（14 tests，mock fetchImpl+步进时钟注入）。覆盖：TTFT 只取首个非空 text（anthropic 完整流精确断言 ttft=40/thinking=20/generation=10/total=80/tps=9600）；仅正文 thinking=null；空流 failed/empty-output 无负 TTFT；usage 缺失 token/TPS=null（字符估算已删除）；generation=0 时 tps=null 非 Infinity；CRLF 流照常解析；401→auth 不回显 body；302→proxy-policy 拒绝跟随；TypeError→cors/network；非法 JSON→protocol/parse；用户取消→cancelled 且 fetch 只调 1 次（样本间隙取消不伪装 partial）；超时→timeout；3 样本 2 成功→partial+progress 3 次；TPS 逐样本中位数与 v1 拼接法结果显式不等（52.6/125→89 vs 85.7）；0 成功样本聚合 null。回归：`npm run test:unit -- --run` 80 tests 全过、typecheck/lint/build exit 0。ProtocolEvent 增加可选 text payload（计量层忽略、v1 CLI 兼容层收集正文；tests/unit/protocols.test.ts 断言同步更新——超 Tasks Files 一笔，Spec §5.1 允许）。v1 bench()/benchMedian() 保留为 bench/ CLI（owner 矩阵跑分）与旧 server 的兼容壳，计量已切新语义；legacy iterSSEEvents 无调用者已删除。this task commit
 
 - [ ] T-005 统一完整 Request URL 并收紧代理边界
   - Covers: FR-001, FR-002, FR-007, NFR-001, AC-003, AC-004, AC-005

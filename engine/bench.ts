@@ -1,26 +1,260 @@
-// 同构测速引擎核心：发请求 → SSE 流式 → 采集 TTFT/TPS/Total
-// 运行时无关（Node / Worker / 浏览器 fetch 都能用）
-// 支持 Anthropic Messages API 和 OpenAI Chat Completions 两种协议
+// 同构测速引擎编排层：BuiltRequest → Transport fetch → SSE → 协议事件 → 计量 → 聚合。
+//
+// S01 架构（Spec §3.1）：
+// - 请求构造（URL/body/headers）属于 engine/request.ts（T-005），本文件只消费 BuiltRequest
+// - runSample：单样本（fetch → iterSSEFrames → adapter → measurement reducer → SampleResult）
+// - runBenchmark：串行多样本 + progress + AbortSignal + 聚合（complete/partial/failed/cancelled）
+//
+// v1 兼容壳 bench()/benchMedian() 保留给 bench/ CLI 与旧 server（T-005/T-006 迁移调用方），
+// 语义已切换到新计量（字符估算 token 已删除、CRLF/空流/取消语义修复）。
 
-import type { BenchInput, BenchResult, Protocol } from "./types";
-import { iterSSEEvents } from "./parse-sse";
+import type {
+  BenchInput,
+  BenchResult,
+  BenchmarkRunResult,
+  Protocol,
+  ProtocolEvent,
+  SampleResult,
+  TransportKind,
+} from "./types";
+import { isSampleCount } from "./types";
+import { iterSSEFrames } from "./parse-sse";
+import { getProtocolAdapter, ProtocolParseError } from "./protocols";
+import {
+  applyEvent,
+  createMeasurementState,
+  finalizeSample,
+} from "./measurement";
+import { aggregateRun } from "./aggregate";
+import {
+  codeFromFetchError,
+  codeFromHttpStatus,
+  sanitizeMessage,
+} from "./errors";
+import { sha256Hex } from "./profiles";
 
-const DEFAULTS = {
+// ───────────────────────── 新引擎 API ─────────────────────────
+
+/** 已构造好的协议请求（由 engine/request.ts 产出；本层原样使用，不改 URL） */
+export interface BuiltRequest {
+  url: string;
+  headers: Record<string, string>;
+  body: string;
+}
+
+export interface RunSampleOptions {
+  protocol: Protocol;
+  fetchImpl?: typeof fetch;
+  now?: () => number;
+  /** 用户取消信号（cancelled 语义） */
+  signal?: AbortSignal;
+  /** 单样本墙钟上限 ms（超时 → failed/timeout） */
+  timeoutMs?: number;
+  /** 事件观察钩子（v1 CLI 兼容层收集正文用；不影响计量） */
+  onEvent?: (ev: ProtocolEvent, at: number) => void;
+}
+
+function isAbortError(e: unknown): boolean {
+  return (
+    e instanceof Error && e.name === "AbortError"
+  );
+}
+
+/** 组合多个 signal（不依赖 AbortSignal.any，兼容旧运行时） */
+function combineSignals(signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  for (const s of signals) {
+    if (s.aborted) {
+      controller.abort();
+      break;
+    }
+    s.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+  return controller.signal;
+}
+
+function failedSampleResult(
+  requestStart: number,
+  streamEnd: number,
+  code: string,
+  safeMessage: string,
+): SampleResult {
+  return {
+    status: "failed",
+    ttftMs: null,
+    thinkingMs: null,
+    generationMs: null,
+    totalMs: Math.max(0, Math.round(streamEnd - requestStart)),
+    outputTokens: null,
+    inputTokens: null,
+    tps: null,
+    tokenSource: "unavailable",
+    error: { code, safeMessage },
+  };
+}
+
+/** 执行单个样本：全链路纯注入（fetch/now/signal），无全局依赖。 */
+export async function runSample(
+  req: BuiltRequest,
+  opts: RunSampleOptions,
+): Promise<SampleResult> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const now = opts.now ?? (() => performance.now());
+  const timeoutMs = opts.timeoutMs ?? 90_000;
+  const adapter = getProtocolAdapter(opts.protocol);
+
+  const timeoutController = new AbortController();
+  const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
+  const signals: AbortSignal[] = [timeoutController.signal];
+  if (opts.signal) signals.push(opts.signal);
+  const signal = combineSignals(signals);
+
+  const requestStart = now();
+  const state = createMeasurementState(requestStart);
+
+  try {
+    const res = await fetchImpl(req.url, {
+      method: "POST",
+      headers: req.headers,
+      body: req.body,
+      signal,
+      redirect: "manual",
+    });
+
+    if (res.type === "opaqueredirect" || (res.status >= 300 && res.status < 400)) {
+      return failedSampleResult(
+        requestStart,
+        now(),
+        "proxy-policy",
+        "上游返回重定向，已拒绝跟随",
+      );
+    }
+
+    if (!res.ok) {
+      // 不读取/不回显上游错误 body（AUD-011）
+      const code = codeFromHttpStatus(res.status);
+      return failedSampleResult(
+        requestStart,
+        now(),
+        code,
+        code === "auth"
+          ? "凭证被上游拒绝"
+          : `上游返回 HTTP ${res.status}`,
+      );
+    }
+
+    if (!res.body) {
+      return failedSampleResult(
+        requestStart,
+        now(),
+        "protocol/parse",
+        "上游未返回可读的流式响应体",
+      );
+    }
+
+    for await (const frame of iterSSEFrames(res.body)) {
+      for (const ev of adapter.mapDataEvent(frame.data)) {
+        const at = now();
+        opts.onEvent?.(ev, at);
+        applyEvent(state, at, ev);
+      }
+    }
+
+    return finalizeSample(state, now());
+  } catch (e) {
+    const streamEnd = now();
+    if (isAbortError(e)) {
+      if (opts.signal?.aborted) {
+        return finalizeSample(state, streamEnd, { cancelled: true });
+      }
+      return failedSampleResult(
+        requestStart,
+        streamEnd,
+        "timeout",
+        `样本超过 ${Math.round(timeoutMs / 1000)}s 墙钟上限`,
+      );
+    }
+    if (e instanceof ProtocolParseError) {
+      return failedSampleResult(
+        requestStart,
+        streamEnd,
+        "protocol/parse",
+        e.message,
+      );
+    }
+    const code = codeFromFetchError(e, { userCancelled: false });
+    return failedSampleResult(
+      requestStart,
+      streamEnd,
+      code,
+      code === "cors/network"
+        ? "网络或 CORS 失败（浏览器直连被拦截）"
+        : sanitizeMessage(e instanceof Error ? e.message : String(e)),
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export interface RunBenchmarkOptions extends RunSampleOptions {
+  samples: number;
+  profile: { id: string; version: number; promptSha256: string };
+  transport: TransportKind;
+  onProgress?: (info: {
+    index: number;
+    total: number;
+    sample: SampleResult;
+  }) => void;
+}
+
+/**
+ * 串行运行多样本并聚合。samples 与 transport 正交（FR-001）；
+ * 用户取消后停止后续样本，状态 cancelled，不写任何持久化（持久化由调用方判断状态）。
+ */
+export async function runBenchmark(
+  req: BuiltRequest,
+  opts: RunBenchmarkOptions,
+): Promise<BenchmarkRunResult> {
+  if (!isSampleCount(opts.samples)) {
+    throw new Error(`samples 必须是 1/3/5，收到 ${opts.samples}`);
+  }
+  const samples: SampleResult[] = [];
+  let aborted = false;
+  for (let i = 0; i < opts.samples; i++) {
+    const sample = await runSample(req, opts);
+    samples.push(sample);
+    opts.onProgress?.({ index: i + 1, total: opts.samples, sample });
+    if (opts.signal?.aborted) {
+      aborted = true;
+      break;
+    }
+  }
+  const run = aggregateRun(samples, {
+    profile: opts.profile,
+    transport: opts.transport,
+    requestedSamples: opts.samples,
+  });
+  // 用户在样本间隙取消：运行未跑满，整体记 cancelled（不伪装 partial）
+  if (aborted && samples.length < opts.samples) {
+    return { ...run, status: "cancelled" as const };
+  }
+  return run;
+}
+
+// ───────────────────────── v1 兼容层（bench/ CLI 与旧 server 使用） ─────────────────────────
+
+const V1_DEFAULTS = {
   maxTokens: 512,
   temperature: 0,
   timeoutMs: 90_000,
   prompt: "Reply exactly: OK",
 };
 
-/** 构造请求 URL + body + headers */
-function buildRequest(input: BenchInput): {
-  url: string;
-  body: string;
-  headers: Record<string, string>;
-} {
-  const maxTokens = input.maxTokens ?? DEFAULTS.maxTokens;
-  const temperature = input.temperature ?? DEFAULTS.temperature;
-  const prompt = input.prompt || DEFAULTS.prompt;
+/** v1 endpoint 拼接（仅兼容层使用；新链路是完整 Request URL，见 T-005） */
+function v1BuildRequest(input: BenchInput): BuiltRequest {
+  const maxTokens = input.maxTokens ?? V1_DEFAULTS.maxTokens;
+  const temperature = input.temperature ?? V1_DEFAULTS.temperature;
+  const prompt = input.prompt || V1_DEFAULTS.prompt;
 
   if (input.protocol === "anthropic") {
     return {
@@ -41,7 +275,6 @@ function buildRequest(input: BenchInput): {
     };
   }
 
-  // openai 协议
   return {
     url: `${input.endpoint.replace(/\/$/, "")}/v1/chat/completions`,
     body: JSON.stringify({
@@ -59,205 +292,54 @@ function buildRequest(input: BenchInput): {
   };
 }
 
-/** 解析单个 SSE 事件，提取首 token / 文本 / usage */
-interface ParseAccumulator {
-  ttft: number;
-  outputTokens: number;
-  inputTokens: number;
-  text: string;
-  thinkingEnd: number; // 思考阶段结束时间戳
-  firstEventTime: number;
-  stopReason?: string;
-}
-
-function makeAccumulator(): ParseAccumulator {
-  return {
-    ttft: 0,
-    outputTokens: 0,
-    inputTokens: 0,
-    text: "",
-    thinkingEnd: 0,
-    firstEventTime: 0,
-  };
-}
-
-/** 处理一个 SSE 事件，更新累加器 */
-function handleEvent(
-  evt: Record<string, unknown>,
-  protocol: Protocol,
-  acc: ParseAccumulator,
-  now: () => number,
-): void {
-  if (acc.firstEventTime === 0) acc.firstEventTime = now();
-
-  if (protocol === "anthropic") {
-    handleAnthropicEvent(evt, acc, now);
-  } else {
-    handleOpenAIEvent(evt, acc, now);
-  }
-}
-
-function handleAnthropicEvent(
-  evt: Record<string, unknown>,
-  acc: ParseAccumulator,
-  now: () => number,
-): void {
-  const type = evt.type as string | undefined;
-  const delta = evt.delta as Record<string, unknown> | undefined;
-
-  // 首 token：第一个 content_block_delta（thinking 或 text 都算首输出）
-  if (
-    acc.ttft === 0 &&
-    type === "content_block_delta" &&
-    (delta?.text || delta?.thinking)
-  ) {
-    acc.ttft = now();
-  }
-
-  // 正文累积
-  if (type === "content_block_delta" && typeof delta?.text === "string") {
-    acc.text += delta.text;
-    acc.thinkingEnd = now(); // 正文开始，思考结束
-  }
-
-  // usage
-  const msgUsage = (evt.message as Record<string, unknown>)?.usage as
-    | Record<string, unknown>
-    | undefined;
-  if (type === "message_start" && msgUsage) {
-    if (typeof msgUsage.input_tokens === "number")
-      acc.inputTokens = msgUsage.input_tokens;
-  }
-  if (evt.usage) {
-    const u = evt.usage as Record<string, unknown>;
-    if (typeof u.input_tokens === "number" && !acc.inputTokens)
-      acc.inputTokens = u.input_tokens;
-    if (typeof u.output_tokens === "number")
-      acc.outputTokens = u.output_tokens;
-  }
-
-  // 结束原因（message_delta.delta.stop_reason）
-  const stop = (evt.delta as Record<string, unknown> | undefined)?.stop_reason;
-  if (type === "message_delta" && typeof stop === "string") {
-    acc.stopReason = stop;
-  }
-}
-
-function handleOpenAIEvent(
-  evt: Record<string, unknown>,
-  acc: ParseAccumulator,
-  now: () => number,
-): void {
-  const choices = evt.choices as Array<Record<string, unknown>> | undefined;
-  const delta = choices?.[0]?.delta as Record<string, unknown> | undefined;
-
-  // 首 token：第一个有内容的 delta
-  if (acc.ttft === 0 && delta && (delta.content || delta.reasoning_content)) {
-    acc.ttft = now();
-  }
-
-  // 正文累积
-  if (delta && typeof delta.content === "string") {
-    acc.text += delta.content;
-    acc.thinkingEnd = now();
-  }
-
-  // usage（stream_options.include_usage）
-  if (evt.usage) {
-    const u = evt.usage as Record<string, unknown>;
-    if (typeof u.prompt_tokens === "number")
-      acc.inputTokens = u.prompt_tokens;
-    if (typeof u.completion_tokens === "number")
-      acc.outputTokens = u.completion_tokens;
-  }
-
-  // 结束原因（最后一个 chunk 的 finish_reason）
-  const finish = choices?.[0]?.finish_reason;
-  if (typeof finish === "string") acc.stopReason = finish;
-}
-
 /**
- * 执行一次测速。运行时无关——传入 fetch 即可（默认用全局 fetch）。
- * 返回 BenchResult。
+ * v1 单次测速（bench/ CLI 的长期 API）。
+ * 计量已切换到新引擎语义：TTFT 只认首个非空正文、thinking 仅 reasoning→text、
+ * usage 缺失 outputTokens=0（不再字符估算）、空流 failed、错误不回显上游 body。
  */
 export async function bench(
   input: BenchInput,
   options?: {
     fetchImpl?: typeof fetch;
     now?: () => number;
+    signal?: AbortSignal;
   },
 ): Promise<BenchResult> {
-  const fetchImpl = options?.fetchImpl ?? fetch;
-  const now = options?.now ?? (() => performance.now());
-  const timeoutMs = input.timeoutMs ?? DEFAULTS.timeoutMs;
+  const req = v1BuildRequest(input);
+  let text = "";
+  let stopReason: string | undefined;
+  const sample = await runSample(req, {
+    protocol: input.protocol,
+    fetchImpl: options?.fetchImpl,
+    now: options?.now,
+    signal: options?.signal,
+    timeoutMs: input.timeoutMs ?? V1_DEFAULTS.timeoutMs,
+    onEvent: (ev) => {
+      if (ev.type === "text" && ev.text) text += ev.text;
+      if (ev.type === "finish") stopReason = ev.stopReason;
+    },
+  });
+  return fromSampleToV1(sample, text, stopReason);
+}
 
-  const { url, body, headers } = buildRequest(input);
-
-  const t0 = now();
-  const acc = makeAccumulator();
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetchImpl(url, {
-      method: "POST",
-      headers,
-      body,
-      signal: controller.signal,
-    });
-
-    if (!res.ok || !res.body) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status}: ${errText.slice(0, 200)}`);
-    }
-
-    for await (const evt of iterSSEEvents(res.body)) {
-      handleEvent(evt, input.protocol, acc, now);
-    }
-
-    const total = now() - t0;
-    clearTimeout(timeout);
-
-    // usage 缺失时按文本粗估 output tokens
-    let outputTokens = acc.outputTokens;
-    if (outputTokens === 0 && acc.text) {
-      outputTokens = Math.max(1, Math.round(acc.text.length / 2));
-    }
-
-    // 思考耗时：若 thinkingEnd 晚于 ttft，说明有思考阶段
-    const thinkingMs =
-      acc.thinkingEnd > acc.ttft ? Math.round(acc.thinkingEnd - acc.ttft) : 0;
-
-    return {
-      ttft: Math.round(acc.ttft - t0),
-      total: Math.round(total),
-      outputTokens,
-      inputTokens: acc.inputTokens,
-      text: acc.text,
-      thinkingMs,
-      stopReason: acc.stopReason,
-      success: true,
-    };
-  } catch (e) {
-    clearTimeout(timeout);
-    const msg = e instanceof Error ? e.message : String(e);
-    return {
-      ttft: 0,
-      total: Math.round(now() - t0),
-      outputTokens: 0,
-      inputTokens: 0,
-      text: "",
-      thinkingMs: 0,
-      success: false,
-      error: msg.includes("aborted") ? `请求超时（${timeoutMs / 1000}s）` : msg,
-    };
-  }
+/** SampleResult → v1 BenchResult 映射 */
+function fromSampleToV1(s: SampleResult, text: string, stopReason?: string): BenchResult {
+  return {
+    ttft: s.ttftMs ?? 0,
+    total: s.totalMs,
+    outputTokens: s.outputTokens ?? 0,
+    inputTokens: s.inputTokens ?? 0,
+    text,
+    thinkingMs: s.thinkingMs ?? 0,
+    stopReason,
+    success: s.status === "complete",
+    error: s.error?.safeMessage,
+  };
 }
 
 /**
- * 跑 N 次取样，返回中位数结果。
- * 用于网站/本地多取样场景。
+ * v1 多取样中位数（旧 server /api/bench 的 samples>1 路径；T-005 移除调用）。
+ * TPS 已改为逐样本计算后取中位数；usage 缺失时为 0（不字符估算）。
  */
 export async function benchMedian(
   input: BenchInput,
@@ -270,32 +352,33 @@ export async function benchMedian(
   outputTokens: number;
   successCount: number;
 }> {
-  const results: BenchResult[] = [];
-  for (let run = 1; run <= samples; run++) {
-    const r = await bench(input);
-    results.push(r);
-    onProgress?.(run, r);
+  const req = v1BuildRequest(input);
+  const timeoutMs = input.timeoutMs ?? V1_DEFAULTS.timeoutMs;
+  const collected: SampleResult[] = [];
+  for (let i = 1; i <= samples; i++) {
+    const s = await runSample(req, {
+      protocol: input.protocol,
+      timeoutMs,
+    });
+    collected.push(s);
+    onProgress?.(i, fromSampleToV1(s, ""));
   }
-  const ok = results.filter((r) => r.success);
-  if (!ok.length) {
-    return {
-      ttft: 0,
-      tps: 0,
-      total: 0,
-      outputTokens: 0,
-      successCount: 0,
-    };
-  }
-  const med = (nums: number[]) => {
-    const s = [...nums].sort((a, b) => a - b);
-    const m = Math.floor(s.length / 2);
-    return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+  const run = aggregateRun(collected, {
+    profile: {
+      id: "v1-legacy",
+      version: 0,
+      promptSha256: sha256Hex(input.prompt || V1_DEFAULTS.prompt),
+    },
+    transport: "browser-direct",
+    requestedSamples: (samples === 1 || samples === 3 || samples === 5
+      ? samples
+      : 1) as 1 | 3 | 5,
+  });
+  return {
+    ttft: run.aggregate.ttftMs ?? 0,
+    tps: run.aggregate.tps ?? 0,
+    total: run.aggregate.totalMs,
+    outputTokens: run.aggregate.outputTokens ?? 0,
+    successCount: run.successCount,
   };
-  const ttft = med(ok.map((r) => r.ttft));
-  const total = med(ok.map((r) => r.total));
-  const outputTokens = med(ok.map((r) => r.outputTokens));
-  // TPS = output tokens / 生成阶段时长
-  const genMs = Math.max(1, total - ttft);
-  const tps = Math.round((outputTokens / genMs) * 1000 * 10) / 10;
-  return { ttft, tps, total, outputTokens, successCount: ok.length };
 }

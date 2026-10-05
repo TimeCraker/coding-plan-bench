@@ -61,12 +61,12 @@ describe("anthropic adapter", () => {
       adapter.mapDataEvent(
         '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi"}}',
       ),
-    ).toEqual([{ type: "text" }]);
+    ).toEqual([{ type: "text", text: "Hi" }]);
     expect(
       adapter.mapDataEvent(
         '{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"..."}}',
       ),
-    ).toEqual([{ type: "reasoning" }]);
+    ).toEqual([{ type: "reasoning", text: "..." }]);
   });
 
   it("空字符串 delta 不映射为 text（TTFT 只认非空正文）", () => {
@@ -128,10 +128,10 @@ describe("openai adapter", () => {
       adapter.mapDataEvent(
         '{"choices":[{"index":0,"delta":{"reasoning_content":"th"}}]}',
       ),
-    ).toEqual([{ type: "reasoning" }]);
+    ).toEqual([{ type: "reasoning", text: "th" }]);
     expect(
       adapter.mapDataEvent('{"choices":[{"index":0,"delta":{"content":"x"}}]}'),
-    ).toEqual([{ type: "text" }]);
+    ).toEqual([{ type: "text", text: "x" }]);
   });
 
   it("无 usage 的流不产生 usage 事件", () => {

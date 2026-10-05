@@ -70,10 +70,12 @@ export interface BenchmarkProfile {
 /**
  * 协议适配器归一化后的事件。时间戳由 measurement reducer 在消费时注入
  * （事件本身纯语义，便于 fixture 锁定）。
+ * text/reasoning 携带可选 payload：计量层忽略（只看时间戳），
+ * CLI 兼容层用它累积正文；payload 不进入任何可持久化结果。
  */
 export type ProtocolEvent =
-  | { type: "reasoning" }
-  | { type: "text" }
+  | { type: "reasoning"; text?: string }
+  | { type: "text"; text?: string }
   | { type: "usage"; inputTokens: number; outputTokens: number }
   | { type: "finish"; stopReason: string }
   | { type: "error"; code: BenchErrorCode; safeMessage: string };

@@ -170,20 +170,3 @@ export async function* iterSSEFrames(
     reader.releaseLock();
   }
 }
-
-/**
- * @deprecated v1 JSON 便利层：仅供旧 bench.ts 过渡使用，T-004 重写后删除。
- * 行为：跳过空 data 与 [DONE]，吞掉 JSON 错误（v1 兼容）。
- */
-export async function* iterSSEEvents(
-  stream: ReadableStream<Uint8Array>,
-): AsyncGenerator<Record<string, unknown>> {
-  for await (const frame of iterSSEFrames(stream)) {
-    if (!frame.data || frame.data === "[DONE]") continue;
-    try {
-      yield JSON.parse(frame.data) as Record<string, unknown>;
-    } catch {
-      // v1 行为：非 JSON 心跳忽略（新链路由协议适配器显式抛错）
-    }
-  }
-}

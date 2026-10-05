@@ -44,10 +44,12 @@ export const anthropicAdapter: ProtocolAdapter = {
       const delta = asRecord(evt.delta);
       if (!delta) return [];
       const text = delta.text;
-      if (typeof text === "string" && text.length > 0) return [{ type: "text" }];
+      if (typeof text === "string" && text.length > 0) {
+        return [{ type: "text", text }];
+      }
       const thinking = delta.thinking;
       if (typeof thinking === "string" && thinking.length > 0) {
-        return [{ type: "reasoning" }];
+        return [{ type: "reasoning", text: thinking }];
       }
       return [];
     }

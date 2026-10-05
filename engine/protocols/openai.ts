@@ -48,12 +48,12 @@ export const openaiAdapter: ProtocolAdapter = {
       if (delta) {
         const content = delta.content;
         if (typeof content === "string" && content.length > 0) {
-          out.push({ type: "text" });
+          out.push({ type: "text", text: content });
         }
         const reasoning =
           delta.reasoning_content ?? delta.reasoning;
         if (typeof reasoning === "string" && reasoning.length > 0) {
-          out.push({ type: "reasoning" });
+          out.push({ type: "reasoning", text: reasoning });
         }
       }
       const finish = first.finish_reason;
