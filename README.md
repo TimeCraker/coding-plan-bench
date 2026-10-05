@@ -1,77 +1,65 @@
 # Coding Plan Bench
 
-> 模型测速台 · 填入任意模型的 endpoint + key，测 **TTFT / TPS / Total**，榜单对比排名
+> 可信测速台 · 选择执行位置，测量 **TTFT / TPS / Total**，同条件榜单对比
 
-支持 Anthropic 兼容 与 OpenAI 兼容 双协议，覆盖智谱、火山、百度、OpenAI、DeepSeek、Claude 等绝大多数模型厂商。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` vs `glm-5.3-flash` 同 key 直对比），表单一键快选，CLI 一条命令跑完编码用例矩阵。
+支持 Anthropic 兼容与 OpenAI 兼容双协议服务。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` vs `glm-5.3-flash` 同 key 直对比），表单一键快选，CLI 一条命令跑完编码用例矩阵。
 
 🌐 **[在线使用](https://coding-plan-bench.pages.dev/)** ｜ 💻 **[下载 Windows 本地版](https://github.com/TimeCraker/coding-plan-bench/releases)**
 
 ---
 
-## 三端架构
+## 三种执行位置（Key 路径是一等公民）
 
-一份 TypeScript 测速引擎，三个运行出口，**同一份核心代码**：
+测速前先选择执行位置——它决定你的 API Key 经过哪条链路，取样次数（1/3/5）不会改变它：
+
+| 执行位置 | 请求路径 | Key 去向 | 限制 |
+|----|------|---------|------|
+| 🌐 **浏览器直连**（默认） | 浏览器 → 模型厂商 | 只存在于浏览器内存与发往厂商的请求中，不经项目服务器 | 厂商需开放浏览器 CORS；失败时不会自动改走代理 |
+| 🔁 **项目代理**（需当次确认） | 浏览器 → 项目 Worker → 厂商 | 经项目 Worker **内存转发**，不写入应用存储；服务运营方与平台仍在传输链路 | 仅支持受信上游列表（HTTPS + host/path 精确匹配）；不追随重定向；每次使用需当次确认 |
+| 💻 **本地 App**（Windows） | 本地 App → 模型厂商 | 全程留在你的设备与厂商之间 | 无需远端代理即可完成 1/3/5 次取样与取消 |
+
+榜单数据只保存在你的浏览器 localStorage（schema v2，含 profile/测量版本/transport 来源；旧数据自动迁移为"遗留·不可排名"）。跨执行位置 / profile 的结果不直接可比，默认只在同条件组内排名。
+
+## 部署拓扑（Cloudflare Pages + Workers，唯一主站事实源）
 
 ```
                     ┌─────────────────────────┐
                     │  engine/ (同构 TS 引擎)   │
-                    │  发请求 → SSE 流式        │
-                    │  → 采集 TTFT/TPS/Total   │
+                    │  请求构造 → SSE 解析       │
+                    │  → 计量 → 聚合（schema v2）│
                     └────────────┬────────────┘
                                  │
           ┌──────────────────────┼──────────────────────┐
           ▼                      ▼                      ▼
-   🌐 网站前端              ☁️ Worker 代理            💻 本地 App
-   (Cloudflare Pages)      (Cloudflare Workers)      (Tauri · Windows)
-   浏览器直调优先            CORS 失败时兜底           key 全程本地
-   开 CORS 的不经服务器      key 用完即弃              绝不出门
+   🌐 浏览器直连            ☁️ Worker 代理            💻 本地 App
+   (Cloudflare Pages 前端)  (Cloudflare Workers)      (Tauri · Windows)
+   默认执行位置             受信上游 allowlist        官方 HTTP 插件
+                           需当次确认                 Key 不出本机
 ```
 
-| 端 | 地址 | 作用 | Key 去向 |
-|----|------|------|---------|
-| 🌐 **网站前端** | [coding-plan-bench.pages.dev](https://coding-plan-bench.pages.dev/) | 用户界面 + 浏览器直调测速 | 开 CORS 的：不出浏览器；否则走 Worker |
-| ☁️ **Worker API** | coding-plan-bench-api.timecraker-ace.workers.dev | CORS 兜底测速代理 | 用完即弃，不存储不 log |
-| 💻 **本地 App** | [Releases](https://github.com/TimeCraker/coding-plan-bench/releases) | Windows 桌面版 | 全程在用户电脑 |
+| 端 | 地址 | 部署入口 |
+|----|------|---------|
+| 🌐 **站点前端** | [coding-plan-bench.pages.dev](https://coding-plan-bench.pages.dev/) | `.github/workflows/deploy-site.yml`（main→production，PR→preview） |
+| ☁️ **Worker API** | coding-plan-bench-api.timecraker-ace.workers.dev | `.github/workflows/deploy-worker.yml`（含 origin/upstream 边界 vars） |
 
-**测速链路**：浏览器直调优先（快、不经服务器）→ CORS 失败自动回退 Worker（保证都能测）。
+> GitHub Pages 不再作为主部署；站点安全头（CSP/HSTS/nosniff/frame 防护）见 `site/public/_headers`，随构建产物发布。
 
----
+## 测什么（指标口径）
 
-## 使用方式
-
-### 🌐 在线用（推荐，零门槛）
-
-打开 [coding-plan-bench.pages.dev](https://coding-plan-bench.pages.dev/) → 填表单 → 点测速 → 看榜单。
-
-首次访问预置了 **GLM-5.3 vs GLM-5.3-Flash 实测数据**（2026-10-05，见 [results/](results/2026-10-05-glm-5.3-matrix.md)），可直接看对比效果；测自己的会加入榜单一起排名。
-
-### 💻 下载本地版（Key 最安全）
-
-去 [Releases](https://github.com/TimeCraker/coding-plan-bench/releases/latest) 下载 Windows 包：
-
-- `coding-plan-bench_x.x.x_x64-setup.exe` — 安装程序
-- `coding-plan-bench_x.x.x_x64_en-US.msi` — MSI 安装包
-
-双击安装 → 开始菜单打开 → 填表单测速。**无需装 Rust / Node**，安装包已含运行时，Key 全程在你自己电脑。
-
----
-
-## 测什么
-
-| 指标 | 含义 | 判据 |
+| 指标 | 口径 | 说明 |
 |------|------|------|
-| **TTFT** | 首 token 延迟（ms）— 响应快慢 | 越低越好 ↓ |
-| **TPS** | tokens/秒 — 输出效率 | 越高越好 ↑ |
-| **Total** | 总耗时（ms）— 端到端完成 | 越低越好 ↓（终极判据） |
+| **TTFT** | 请求发出 → 第一个非空可见正文 delta | 思考（reasoning）阶段不计入 |
+| **TPS** | 上游 usage 输出 token ÷ 正文生成区间 | 逐样本计算后取中位数；**上游未返回 usage 时为空且不参与 TPS 排名**（不用字符数估算） |
+| **Total** | 请求发出 → 流结束 | 完整度参量之一，不是唯一判据 |
 
-榜单支持按三个指标各自排名切换。多次取样取中位数，排除网络抖动。
+测试条件由版本化 profile 锁定（`cpb-standard@1`：固定 prompt + sha256、温度 0、max_tokens 1024）；多条取样（1/3/5）逐样本计量后取中位数，完整/部分成功/失败/已取消四态分开呈现，部分成功不进入默认排名。方法学细节见站内「方法学与口径」。
 
 ## 模型矩阵（glm-5.3 世代）
 
 模型矩阵的单一事实源在 [`engine/models.ts`](engine/models.ts)：智谱 `glm-5.3` / `glm-5.3-flash`（同一把 `ZHIPU_API_KEY`）+ 百度 `DeepSeek-V4.1-Flash` 占位 + GLM-5.2 三渠道存量对照。两处消费：
 
-- **网站快选**：测速表单顶部芯片，点击预填 endpoint / model / 协议（key 永不预填）
-- **CLI 矩阵跑分**：4 条区分档位的编码用例（生成×2 / 改错 / 解释）× 矩阵中所有有 key 的模型，串行 + 间隔频控 + 失败重试，产出中位数汇总与可复现的原始 JSON：
+- **网站快选**：测速表单顶部芯片，点击预填完整 Request URL / model / 协议（key 永不预填）
+- **CLI 矩阵跑分**：4 条区分档位的编码用例 × 矩阵中所有有 key 的模型，串行 + 间隔频控 + 失败重试，产出中位数汇总与可复现的原始 JSON：
 
 ```bash
 cp .env.example .env   # 填 ZHIPU_API_KEY
@@ -80,16 +68,11 @@ npm run bench:matrix   # 结果写入 results/data/，报告见 results/
 
 最新一轮实测（2026-10-05，temperature=0，32/32 成功）：**GLM-5.3 端到端中位 19.9s / 89 TPS，GLM-5.3-Flash 34.7s / 64 TPS；中高难用例上两档答案质量打平**——详见 [results/2026-10-05-glm-5.3-matrix.md](results/2026-10-05-glm-5.3-matrix.md)。
 
----
+## 隐私与限制
 
-## 安全
-
-- 🔑 **Key 不存储不上传**：仅用于本次测速请求，响应结束即丢弃
-- 📋 **localStorage 只存指标**（TTFT/TPS/Total + endpoint + model），**绝不存 Key**
-- 🏠 **本地版 Key 全程在用户电脑**
-- 🔓 **Worker / 服务器代码开源可审计**（本仓库 `server/` + `src/worker.ts`）
-
----
+- 🔑 Key 只存在于当前运行内存与你所选执行位置的请求链路；不进入 localStorage、日志、URL 或错误文本
+- 🔁 公共代理不是任意转发器：仅受信 HTTPS 上游（host+path 精确 allowlist），拒绝 IP/私网/localhost/非 443 端口/重定向/超限请求，全部在发起上游请求前拦截
+- ⚠️ 已知限制：仅支持 Anthropic / OpenAI 兼容协议；代理只开放配置列表内的目标（其它服务请用浏览器直连或本地 App）；不同执行位置的网络路径不同，跨条件比较需显式切换分组
 
 ## 本地开发
 
@@ -99,97 +82,98 @@ cd coding-plan-bench
 npm install
 ```
 
-### 常用命令
+### 质量命令（全部真实存在）
 
 ```bash
-npm run dev        # 前端开发 (http://localhost:5173)
-npm run build      # 构建前端到 site/dist
-npm run server     # 起 Node 后端 API (localhost:8787, 可选, 浏览器直调失败时回退)
-npm run bench:matrix # CLI 模型矩阵跑分 (读 env key, 写 results/data/)
-npm run tauri dev  # Tauri 本地 App 开发 (需 Rust + MSVC Build Tools)
-npm run tauri build # 打包 Windows 安装包
+npm run typecheck       # 全仓 TS（engine/server/src/site/tests）
+npm run lint            # eslint（含 react-hooks）
+npm run test:unit       # 单元测试（vitest，node 环境，禁真实网络）
+npm run test:integration# 集成测试（transport/协议/引擎接线）
+npm run test:security   # 代理边界危险矩阵（mock upstream 0 次调用）
+npm run test:e2e        # Playwright 全量浏览器测试（默认用系统 Edge）
+npm run test:a11y       # 无障碍（Axe 0 critical/serious）
+npm run test:responsive # 响应式（375/768/1024/1440 无横滚）
+npm run test:visual     # 视觉快照（light/dark + reduced-motion）
+npm run build           # 类型检查 + 前端构建（site/dist）
+npm run dev             # 前端开发 (http://localhost:5173)
+npm run server          # Node 后端 API (localhost:8787，可选)
+npm run bench:matrix    # CLI 模型矩阵跑分（读 env key）
+npm run tauri dev       # Tauri 本地 App 开发（需 Rust + MSVC）
+npm run tauri build     # Windows 安装包
 ```
 
 开发时前端通过 Vite proxy 把 `/api` 转发到 `localhost:8787`（见 `vite.config.ts`）。
 
 ### 自部署后端（替代 Worker）
 
-如果你有自己的服务器，可以用同一份 Hono 代码部署：
+同一份 Hono 代码可跑在任意 Node 服务器（额外做 DNS 私网校验，防 DNS rebinding）：
 
 ```bash
-npm run build              # 构建前端
-node --import tsx server/node.ts   # 起后端 (或编译后 node server/node.js)
+CORS_ALLOWED_ORIGINS=https://your-site.example \
+ALLOWED_UPSTREAMS="open.bigmodel.cn|/api/anthropic/v1/messages" \
+node --import tsx server/node.ts
 ```
 
-前端通过环境变量 `VITE_API_BASE` 指向你的后端：
+前端通过 `VITE_API_BASE` 指向你的后端：`VITE_API_BASE=https://your-server.com/api npm run build`。
 
-```bash
-VITE_API_BASE=https://your-server.com/api npm run build
-```
+## Windows 本地版状态
+
+Tauri 2 壳 + 官方 HTTP 插件（`tauri-local` 执行位置），生产链路不访问项目 `/api`；CSP 非 null、capabilities 仅放行 HTTPS 远程目标。安装包未签名，由 [Build Windows App](https://github.com/TimeCraker/coding-plan-bench/actions/workflows/build-windows.yml) workflow 在 GitHub Windows runner 构建。实机 1/3/5 取样与取消的外部验证证据由 owner 在发布前补齐（T-012）。
 
 ---
 
-## 技术栈
-
-| 层 | 技术 | 说明 |
-|----|------|------|
-| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · Framer Motion | 亮/暗双主题，自绘 SVG 图表 |
-| 引擎 | TypeScript（同构） | 一份代码跑三处，零运行时依赖 |
-| 后端 | Hono | 同构 Cloudflare Worker + Node |
-| 本地 App | Tauri 2 | Windows，复用前端 |
-| CI/CD | GitHub Actions | 前端自动部署 + Windows 包构建 |
-
-## 项目结构
-
-```
-coding-plan-bench/
-├─ engine/            # 同构测速引擎 (三端共用)
-│  ├─ bench.ts        # 核心: 发请求 → SSE → 采集 TTFT/TPS/Total/stopReason
-│  ├─ parse-sse.ts    # SSE 流解析
-│  ├─ models.ts       # 模型矩阵 (glm-5.3 世代 + GLM-5.2 存量, 单一事实源)
-│  └─ types.ts        # 共享类型
-├─ bench/             # CLI 矩阵跑分 (npm run bench:matrix)
-│  ├─ prompts.ts      # 编码用例集 (生成/改错/解释, 含评分 rubric)
-│  └─ run.ts          # 串行编排 → 中位数汇总 → results/data/
-├─ server/            # Hono 后端 (同构 Worker + Node)
-│  ├─ index.ts        # POST /api/bench
-│  └─ node.ts         # Node 运行时入口
-├─ src/worker.ts      # Cloudflare Worker 入口
-├─ site/              # 前端 (Vite + React)
-│  ├─ src/
-│  │  ├─ components/  # BenchForm / Leaderboard / ResultCard ...
-│  │  ├─ lib/         # api / storage / theme / format
-│  │  └─ styles/      # Tailwind + 主题变量
-│  └─ public/
-├─ results/           # 实测报告 (md) + 原始数据 (data/*.json)
-├─ src-tauri/         # Tauri 本地 App (Rust 壳)
-├─ .github/workflows/ # CI: 部署前端 + 构建 Windows 包
-└─ wrangler.toml      # Cloudflare Worker 配置
-```
-
----
-
-## 部署
-
-### 网站前端（Cloudflare Pages，主）
+## 部署（owner 手动/CI）
 
 ```bash
+# Worker API（先部署，边界 vars 见 deploy-worker.yml）
+npx wrangler deploy --var CORS_ALLOWED_ORIGINS:https://coding-plan-bench.pages.dev \
+  --var ALLOWED_UPSTREAMS:"open.bigmodel.cn|/api/anthropic/v1/messages"
+
+# 站点（Cloudflare Pages）
 VITE_API_BASE=https://coding-plan-bench-api.timecraker-ace.workers.dev/api \
   npm run build
 npx wrangler pages deploy site/dist --project-name=coding-plan-bench --branch=main
 ```
 
-### Worker API（Cloudflare Workers）
+push 到 main 只触发 CI 部署 workflow；acceptance 未通过前不发布正式 release（见 `docs/ai-delivery/`）。
 
-```bash
-npx wrangler deploy     # 部署 src/worker.ts
+## 技术栈
+
+| 层 | 技术 | 说明 |
+|----|------|------|
+| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · Framer Motion | 亮/暗双主题（跟随系统偏好），响应式 375–1440 |
+| 引擎 | TypeScript（同构） | 一份代码三端复用：请求构造/SSE 解析/计量/聚合，schema v2 |
+| 后端 | Hono | 同构 Cloudflare Worker + Node（结构化 allowlist 边界） |
+| 本地 App | Tauri 2 + plugin-http | Windows，复用前端与引擎 |
+| CI/CD | GitHub Actions | 质量门禁 + Pages/Worker 部署 + Windows 构建 |
+
+## 项目结构
+
 ```
-
-### Windows 本地包（GitHub Actions）
-
-手动触发 [Build Windows App](https://github.com/TimeCraker/coding-plan-bench/actions/workflows/build-windows.yml) workflow，输入 tag（如 `v0.1.0`），自动构建并发到 Releases。
-
----
+coding-plan-bench/
+├─ engine/            # 同构测速引擎（三端共用）
+│  ├─ request.ts      # 完整 Request URL 原样 + 协议 headers/body 构造
+│  ├─ parse-sse.ts    # SSE 帧解析（LF/CRLF/CR、任意 chunk、EOF flush）
+│  ├─ protocols/      # anthropic/openai 事件归一化 adapter
+│  ├─ measurement.ts  # 单样本时间线 reducer（TTFT/thinking/generation）
+│  ├─ aggregate.ts    # 逐指标中位数 + complete/partial/failed/cancelled
+│  ├─ profiles.ts     # cpb-standard@1 + 纯 TS sha256
+│  ├─ errors.ts       # 12 个稳定错误码
+│  ├─ bench.ts        # runSample/runBenchmark 编排 + v1 CLI 兼容壳
+│  └─ models.ts       # 模型矩阵（单一事实源）
+├─ bench/             # CLI 矩阵跑分 (npm run bench:matrix)
+├─ server/            # Hono 可信代理（config/validation/security/index）
+├─ src/worker.ts      # Cloudflare Worker 入口（env 配置）
+├─ site/              # 前端 (Vite + React)
+│  ├─ src/lib/transports/  # browser-direct / trusted-proxy(consent) / tauri-local
+│  ├─ src/hooks/useBenchmarkRun.ts  # 状态机 + 取消
+│  ├─ src/content/copy.ts   # 文案单一事实源
+│  └─ public/_headers # CSP/HSTS 等安全头
+├─ tests/             # unit / integration / e2e / config（禁真实网络）
+├─ src-tauri/         # Tauri 本地 App（Rust 壳 + HTTP 插件）
+├─ .github/workflows/ # CI: 质量门禁 + Pages/Worker 部署 + Windows 构建
+└─ docs/ai-delivery/  # PRD / Stage Spec / Tasks / Handoff（权威输入）
+```
 
 ## License
 

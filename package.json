@@ -2,7 +2,7 @@
   "name": "coding-plan-bench",
   "version": "0.1.0",
   "private": true,
-  "description": "模型矩阵测速台：glm-5.3 vs glm-5.3-flash 多模型对比 / Model-matrix benchmark: glm-5.3 vs glm-5.3-flash",
+  "description": "可信测速台：三种执行位置测量 LLM TTFT/TPS/Total / Trusted benchmark with explicit transports",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,9 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
     "test:responsive": "playwright test tests/e2e/responsive.spec.ts",
-    "test:visual": "playwright test tests/e2e/visual.spec.ts"
+    "test:visual": "playwright test tests/e2e/visual.spec.ts",
+    "test:docs": "vitest run tests/config/docs-config.test.ts",
+    "test:deploy-config": "vitest run tests/config/deploy-config.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.12",

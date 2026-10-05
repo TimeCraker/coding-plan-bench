@@ -1,0 +1,45 @@
+# Worker API 部署（Cloudflare Workers）
+# 边界策略显式注入：CORS origin 精确列表 + 受信上游 host|pathPrefix。
+# 不自动创建/购买资源；D1/KV/R2 等均不需要（无服务端持久化，S01 冻结）。
+#
+# 需要 GitHub Secrets：
+#   CLOUDFLARE_API_TOKEN  - Workers 部署权限
+#   CLOUDFLARE_ACCOUNT_ID - Cloudflare Account ID
+# preview 策略：手动 workflow_dispatch 先部署，验收通过后由 owner 合并 main 触发生产部署。
+
+name: Deploy Worker (Cloudflare Workers)
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/worker.ts", "server/**", "engine/**", "wrangler.toml"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Typecheck server + worker
+        run: npm run typecheck
+
+      - name: Security suite (proxy boundary)
+        run: npm run test:security
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # 生产边界：仅主站 origin 可调用代理；受信上游由 owner 维护
+          command: deploy --var CORS_ALLOWED_ORIGINS:https://coding-plan-bench.pages.dev --var ALLOWED_UPSTREAMS:open.bigmodel.cn\|/api/anthropic/v1/messages

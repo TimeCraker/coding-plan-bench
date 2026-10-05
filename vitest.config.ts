@@ -11,7 +11,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/integration/**/*.test.ts",
+      "tests/config/**/*.test.ts",
+    ],
     setupFiles: ["tests/setup/no-network.ts"],
     // deterministic：测试内不允许真实计时抖动影响断言（engine 通过注入 now() 控制）
     testTimeout: 10_000,

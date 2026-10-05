@@ -121,7 +121,7 @@ observed_handoff_revision: 1
   - Commit: `feat(design): deliver accessible responsive workbench`
   - Evidence: done — `npm run test:a11y` exit 0（6 tests，连续 3 轮稳定：Axe 双视图 0 critical/serious；icon-only 控件 accessible name 显式核对；键盘主流程 Enter 提交+焦点环；tablist/tab/aria-selected；fieldset+legend）+ `npm run test:responsive` exit 0（7 tests：375/768/1024/1440 页面级 0 横滚+核心区块可见；375 删除按钮常显 opacity≠0 且 ≥44×44 直点成功；指标控件可访问滚动+无页面横滚；375 全流程提交）+ `npm run test:visual` exit 0（5 tests：1440/375 × light/dark + reduced-motion 双帧稳定快照，baseline 已提交 tests/e2e/visual.spec.ts-snapshots）。修复清单：根布局 flex-col md:flex-row（移动端 Sidebar 不再与主区水平挤压，375 横滚根因）；SecurityBanner/TransportSelector 长文本 min-w-0/flex-wrap；指标 tablist 外包 w-full overflow-x-auto 容器；--text-muted 加深至 #3f4857（light）/暗色同步（10-11px 小字 ≥4.5:1）；GlobalLeaderboard emerald/blue/purple-600→700 档；Sidebar 激活态 desc 白色；移动端 icon 控件 min-h/w-11；ResultCard role=status aria-live；全局 :focus-visible 焦点环；theme-boot.js 外链防闪烁脚本+theme.ts 跟随 prefers-color-scheme；index.html description 去"任意模型"。设计文档：site/design-system/MASTER.md 更新（S01 信息层级/对比度基线/44px 触控/焦点环/无 hover-only/min-w-0 规则与实现同步）；设计系统合并为单一事实源=owner prior commit 63f309d（根目录重复 design-system 已删，未重建）。useReducedMotion/静态 Tailwind（无运行时 <style>）已随 T-007 落地。回归：typecheck/lint 0、unit 159、integration 59、e2e（flow+copy+leaderboard）13 全过。this task commit
 
-- [ ] T-010 统一 Cloudflare 部署、安全 headers 与项目文档
+- [x] T-010 统一 Cloudflare 部署、安全 headers 与项目文档
   - Covers: FR-007, FR-010, FR-012, NFR-001, NFR-005, AC-004, AC-008, AC-012
   - Depends on: T-005, T-006, T-009
   - Evidence source: automated
@@ -130,7 +130,7 @@ observed_handoff_revision: 1
   - Verify: `npm run test:docs && npm run test:deploy-config && npm run build`；文档命令存在、workflow 与 README 拓扑一致、构建产物含 headers、无旧无条件承诺
   - Definition of done: README/CI/线上主域一致；GitHub Pages 不再被误作主部署；安全配置可由测试解析；生产部署仍需 T-012 owner 证据。
   - Commit: `docs(platform): align deployment privacy and operations`
-  - Evidence: pending
+  - Evidence: done — `npm run test:docs` exit 0（6 tests：README 每条 npm run 命令存在于 scripts（含 a11y/responsive/visual/quality 十项）；无 终极判据/任意模型/不上传/反映本机当前真实表现；三 transport Key 去向+「内存转发」实质披露；pages.dev 主域+无 gh-pages 残留）+ `npm run test:deploy-config` exit 0（6 passed 2 skipped：_headers 解析器断言 CSP default-src self/object-src none/base-uri none/frame-ancestors none/connect-src self https:/HSTS/nosniff/Referrer-Policy/Permissions-Policy/X-Frame-Options DENY + HTML no-cache 与 /assets/* immutable + script-src 无 unsafe-inline；wrangler.toml vars；deploy-site.yml production(main)/preview(pr-N)分离+显式 VITE_API_BASE+dist/_headers 校验步骤+无 pages project create；deploy-worker.yml 显式 --var CORS/ALLOWED + 先 typecheck/test:security；构建产物 describe 因本地 Temp 损坏 execSync build 前置失败显示 skipped（exit 0），带 TMP 绕行环境重跑为 8 passed 且 dist/_headers 与无内联 script 断言全过——构建产物含 headers 的证据：BUILD exit 0 + deploy-config 带 TMP 全绿）+ `npm run build` exit 0（TMP/TEMP 绕法）。deploy-cloudflare.yml 已删（被 deploy-site.yml+deploy-worker.yml 取代）；PLAN.md 已由 owner prior commit 63f309d 删除、PLAN-v2 superseded 标注由 prior commit d13c431 完成（未重建）；package.json description 去 GLM 限定（改通用可信测速描述）；README 全面重写（三 transport 表+隐私限制+指标口径+全部质量命令+Windows 状态+部署拓扑+新项目结构）；index.html theme-boot 引用改绝对路径 /theme-boot.js（vite public 资源规范）。机械检查 `git grep -E "API Key.*不上传|终极判据|任意模型|反映本机当前真实表现" -- README.md site/src` 0 命中。回归：typecheck/lint 0、unit 全量 171+2skipped exit 0、playwright 全量 32 passed。生产部署仍需 T-012 owner 证据（未部署未 push）。this task commit
 
 - [ ] T-011 固化全量自动验收与 bundle 门禁
   - Covers: FR-012, NFR-003, NFR-005, AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-008, AC-009, AC-010, AC-011

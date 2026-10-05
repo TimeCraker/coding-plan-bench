@@ -1,0 +1,65 @@
+# 站点部署（Cloudflare Pages = 唯一主拓扑，S01 冻结）
+# - production：push main → pages deploy --branch=main
+# - preview：PR → pages deploy --branch=preview-<pr>（与生产分离，可单独验收后合并）
+# - 不自动创建项目/付费资源：coding-plan-bench Pages 项目需 owner 预先创建
+#
+# 需要 GitHub Secrets：
+#   CLOUDFLARE_API_TOKEN  - Cloudflare API Token（Pages:Edit）
+#   CLOUDFLARE_ACCOUNT_ID - Cloudflare Account ID
+# 未配置时本 workflow 失败但不影响代码；可改用手动 `npx wrangler pages deploy`
+
+name: Deploy Site (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Build site
+        env:
+          # Worker API 基址显式注入（preview 与 production 同一 Worker，边界由 Worker vars 控制）
+          VITE_API_BASE: https://coding-plan-bench-api.timecraker-ace.workers.dev/api
+        run: npm run build
+
+      - name: Verify security headers in artifact
+        run: |
+          test -f site/dist/_headers || { echo "site/dist/_headers missing"; exit 1; }
+          grep -q "Content-Security-Policy" site/dist/_headers
+          grep -q "frame-ancestors 'none'" site/dist/_headers
+
+      - name: Deploy to Cloudflare Pages (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/dist --project-name=coding-plan-bench --branch=main
+
+      - name: Deploy to Cloudflare Pages (preview)
+        if: github.event_name == 'pull_request'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/dist --project-name=coding-plan-bench --branch=preview-${{ github.event.number }}

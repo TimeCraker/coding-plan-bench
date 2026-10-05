@@ -5,8 +5,8 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // GitHub Pages 用子路径 base, Cloudflare Pages/本地用根路径
-  // 通过环境变量 VITE_BASE 覆盖; Pages 部署时不设 = 默认 /
+  // 主拓扑为 Cloudflare Pages（根路径部署，S01 冻结）
+  // VITE_BASE 仅作特殊子路径托管时的覆盖开关，GitHub Pages 不再是部署事实源
   base: process.env.VITE_BASE || "/",
   // bench/ 不参与前端构建；前端在 site/ 之外时用 root 指向 site
   root: "site",
