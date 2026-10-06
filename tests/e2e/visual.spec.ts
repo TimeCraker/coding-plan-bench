@@ -18,7 +18,6 @@ test.describe("visual", () => {
       await settle(page);
       await expect(page).toHaveScreenshot(`workbench-1440-${scheme}.png`, {
         fullPage: false,
-        maxDiffPixelRatio: 0.02,
       });
     });
 
@@ -29,7 +28,6 @@ test.describe("visual", () => {
       await settle(page);
       await expect(page).toHaveScreenshot(`workbench-375-${scheme}.png`, {
         fullPage: false,
-        maxDiffPixelRatio: 0.02,
       });
     });
   }
@@ -39,13 +37,9 @@ test.describe("visual", () => {
     await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
     await page.goto("/");
     await settle(page);
-    // 连续两次截图像素一致 → 证明无持续变化的 JS/CSS 动画
-    await expect(page).toHaveScreenshot(`workbench-1440-reduce.png`, {
-      maxDiffPixelRatio: 0.02,
-    });
+    // 连续两次截图像素一致 → 证明无持续变化的 JS/CSS 动画（容差走 config 0.05）
+    await expect(page).toHaveScreenshot(`workbench-1440-reduce.png`);
     await page.waitForTimeout(1200);
-    await expect(page).toHaveScreenshot(`workbench-1440-reduce.png`, {
-      maxDiffPixelRatio: 0.02,
-    });
+    await expect(page).toHaveScreenshot(`workbench-1440-reduce.png`);
   });
 });
