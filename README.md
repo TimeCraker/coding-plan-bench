@@ -107,6 +107,7 @@ npm run test:a11y       # 无障碍（Axe 0 critical/serious）
 npm run test:responsive # 响应式（375/768/1024/1440 无横滚）
 npm run test:visual     # 视觉快照（light/dark + reduced-motion）
 npm run build           # 类型检查 + 前端构建（site/dist）
+npm run verify          # 发布级验收单入口：typecheck→lint→全部测试→build→check:bundle/check:clean 串行
 npm run dev             # 前端开发 (http://localhost:5173)
 npm run server          # Node 后端 API (localhost:8787，可选)
 npm run bench:matrix    # CLI 模型矩阵跑分（读 env key）
@@ -153,7 +154,7 @@ push 到 main 只触发 CI 部署 workflow；acceptance 未通过前不发布正
 
 | 层 | 技术 | 说明 |
 |----|------|------|
-| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · Framer Motion | 亮/暗双主题（跟随系统偏好），响应式 375–1440 |
+| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · 纯 CSS 动效 | 亮/暗双主题（跟随系统偏好），响应式 375–1440；framer-motion 已移除（T-011 减重，初始 JS gzip 83.5KB，`check:bundle` ≤100KB 门禁） |
 | 引擎 | TypeScript（同构） | 一份代码三端复用：请求构造/SSE 解析/计量/聚合，schema v2 |
 | 后端 | Hono | 同构 Cloudflare Worker + Node（结构化 allowlist 边界） |
 | 本地 App | Tauri 2 + plugin-http | Windows，复用前端与引擎 |
@@ -170,11 +171,12 @@ coding-plan-bench/
 │  ├─ measurement.ts  # 单样本时间线 reducer（TTFT/thinking/generation）
 │  ├─ aggregate.ts    # 逐指标中位数 + complete/partial/failed/cancelled
 │  ├─ profiles.ts     # cpb-standard@1 + 纯 TS sha256
+│  ├─ types.ts        # 共享类型契约（profile/结果/错误码，schema v2）
 │  ├─ errors.ts       # 12 个稳定错误码
 │  ├─ bench.ts        # runSample/runBenchmark 编排 + v1 CLI 兼容壳
 │  └─ models.ts       # 模型矩阵（单一事实源）
 ├─ bench/             # CLI 矩阵跑分 (npm run bench:matrix)
-├─ server/            # Hono 可信代理（config/validation/security/index）
+├─ server/            # Hono 可信代理（config/validation/security/index/node）
 ├─ src/worker.ts      # Cloudflare Worker 入口（env 配置）
 ├─ site/              # 前端 (Vite + React)
 │  ├─ src/lib/transports/  # browser-direct / trusted-proxy(consent) / tauri-local

@@ -66,8 +66,12 @@
 |------|------|------|
 | hover / focus | 100-150ms | ease-out |
 | 指标切换 / tab | 200-250ms | `cubic-bezier(0.2,0,0,1)` |
-| 数据入场（柱图 grow / 数字 count-up）| 400-600ms | ease-out / spring |
+| 数据入场（柱图 grow / 数字 count-up）| 400-600ms | ease-out |
 | 页面首屏编排 | 600ms 内完成 | stagger 60-80ms |
+
+> 动效实现（T-011 起）：framer-motion 依赖已整体移除，入场/循环动画均为纯 CSS
+> （globals.css `anim-fade-up` / `anim-fade-in` / 背景循环工具类；tab 选中态为
+> active class + transition），`prefers-reduced-motion` 由全局 CSS 覆盖停用。
 
 **铁律**：
 - 只动画 `transform` / `opacity`，禁止 `width/height/top/left`
@@ -76,16 +80,19 @@
 - `prefers-reduced-motion` 必须全量降级（已在 globals.css 处理）
 - 频繁触发的动效越短越淡（hover 100ms opacity）
 
-## 组件清单
+## 组件清单（S01 重构后实际组件）
 
 | 组件 | 说明 |
 |------|------|
-| `StatCard` | 概览数字卡，count-up 动效 |
-| `ComparisonBar` | 横向柱状对比，grow 动效，三家品牌色 |
-| `MetricToggle` | TTFT/TPS/Total 切换，layout 动效（shared layoutId）|
-| `TrendLine` | 历史折线，SVG 自绘 |
-| `DetailTable` | 明细，可展开行 |
-| `Skeleton` | 数据加载骨架屏 shimmer |
+| `Sidebar` | 侧边栏导航（测速台 / 全球能力榜视图切换） |
+| `SecurityBanner` | 常驻安全与信任提示 |
+| `TransportSelector` | 执行位置选择（fieldset + radio） |
+| `BenchForm` | 测速输入表单（协议 / 完整 Request URL / Key / 取样次数 / 快选芯片） |
+| `RunProgress` | consent 面板 + 样本进度 + 取消 |
+| `ResultCard` | 单次结果卡（transport / profile / 完整状态 / token 来源） |
+| `Leaderboard` | 可比榜单（指标 tablist，active class + transition） |
+| `GlobalLeaderboard` | 全球模型能力榜（静态数据，内置 `Skeleton` 骨架屏） |
+| `Methodology` | 方法学与口径说明 |
 
 ## 反模式（不做）
 
