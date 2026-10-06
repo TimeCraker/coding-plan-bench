@@ -41,5 +41,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # wrangler 4 与仓内 @cloudflare/workers-types@5 peer 兼容；action 默认 3.90.0 会 ERESOLVE
+          wranglerVersion: "4.116.0"
           # 生产边界：仅主站 origin 可调用代理；受信上游由 owner 维护
           command: deploy --var CORS_ALLOWED_ORIGINS:https://coding-plan-bench.pages.dev --var ALLOWED_UPSTREAMS:open.bigmodel.cn\|/api/anthropic/v1/messages

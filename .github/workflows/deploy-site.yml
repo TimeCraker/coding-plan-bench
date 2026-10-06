@@ -54,6 +54,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # wrangler 4 与仓内 @cloudflare/workers-types@5 peer 兼容；action 默认 3.90.0 会 ERESOLVE
+          wranglerVersion: "4.116.0"
           command: pages deploy site/dist --project-name=coding-plan-bench --branch=main
 
       - name: Deploy to Cloudflare Pages (preview)
@@ -62,4 +64,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.116.0"
           command: pages deploy site/dist --project-name=coding-plan-bench --branch=preview-${{ github.event.number }}
