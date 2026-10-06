@@ -10,9 +10,12 @@ export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
   expect: {
-    // 视觉对比：快照名去平台后缀（win32/linux 共用基线），余量 0.05 吸收
-    // 本地 Edge 与 CI chromium 的字形栅格化差异（2026-10-05 CI 实测踩坑）
-    toHaveScreenshot: { maxDiffPixelRatio: 0.05, snapshotNameTemplate: "{arg}{ext}" },
+    // 视觉对比：路径模板去掉浏览器/平台后缀（win32/linux 共用基线），余量 0.05 吸收
+    // 本地 Edge 与 CI chromium 的字形栅格化差异（2026-10-05/06 CI 实测踩坑两轮）
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.05,
+      pathTemplate: "{testDir}/{testFileName}-snapshots/{arg}{ext}",
+    },
   },
   fullyParallel: false,
   workers: 1,
