@@ -1,6 +1,6 @@
 // 执行位置选择（FR-001）：fieldset + radio 显式语义；每个选项直接展示 Key 路径。
 // transport 是唯一决定 Key 去向的输入——samples 永不影响它。
-// Swiss 行式选择列表：墨线外框 + 3px 语义色轨 + 选中珊瑚方标，零圆角零图标。
+// Swiss 行式选择列表：墨线外框 + 语义色轨（代理轨 4px 宽度区分）+ 选中珊瑚方标+细线双元素，零圆角零图标。
 
 import type { TransportKind } from "../../../engine/types";
 import { LOCAL_APP_HINT, TRANSPORT_COPY } from "../content/copy";
@@ -11,11 +11,12 @@ interface Props {
   onChange: (t: TransportKind) => void;
 }
 
-/** 左侧 3px 状态轨：执行位置的数据语义色（直连=run / 代理=warn / 本地=ok），非装饰 */
+/** 左侧状态轨：执行位置的数据语义色（直连=run / 代理=warn / 本地=ok），非装饰。
+ *  代理轨 4px、其余 3px——琥珀与珊瑚同暖调，靠宽度区分可分性（EYE P2-3，不改色值）。 */
 const RAIL: Record<TransportKind, string> = {
-  "browser-direct": "bg-run",
-  "trusted-proxy": "bg-warn",
-  "tauri-local": "bg-ok",
+  "browser-direct": "w-[3px] bg-run",
+  "trusted-proxy": "w-[4px] bg-warn",
+  "tauri-local": "w-[3px] bg-ok",
 };
 
 export function TransportSelector({ value, available, onChange }: Props) {
@@ -55,8 +56,8 @@ export function TransportSelector({ value, available, onChange }: Props) {
                 disabled={!enabled}
                 onChange={() => enabled && onChange(t)}
               />
-              <span aria-hidden="true" className={`w-[3px] flex-none ${RAIL[t]}`} />
-              <span className="flex-1 min-w-0 px-4 py-3 flex flex-col gap-1">
+              <span aria-hidden="true" className={`flex-none ${RAIL[t]}`} />
+              <span className="flex-1 min-w-0 px-6 py-3.5 flex flex-col gap-1">
                 <span
                   className={`text-[13px] font-semibold ${enabled ? "text-ink" : "text-mute"}`}
                 >
@@ -68,9 +69,12 @@ export function TransportSelector({ value, available, onChange }: Props) {
                   {copy.keyPath}
                 </span>
               </span>
-              <span className="flex items-center pr-4 flex-none">
+              <span className="flex items-center pr-6 flex-none">
                 {active ? (
-                  <span aria-hidden="true" className="w-2 h-2 bg-accent" />
+                  <span aria-hidden="true" className="flex items-center">
+                    <span className="w-2 h-2 bg-accent" />
+                    <span className="w-3 h-px bg-line-2 ml-0.5" />
+                  </span>
                 ) : (
                   !enabled && <span className="lbl-mono">N/A</span>
                 )}
@@ -80,7 +84,7 @@ export function TransportSelector({ value, available, onChange }: Props) {
         })}
       </div>
       {!available.includes("tauri-local") && (
-        <p className="border-t border-line px-4 py-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] text-ink-3 leading-relaxed">
+        <p className="border-t border-line px-6 py-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] text-ink-3 leading-relaxed">
           <span aria-hidden="true">↓</span>
           {LOCAL_APP_HINT}
           <a

@@ -1,6 +1,6 @@
 // 测速表单（FR-002）：完整 Request URL + 协议 radio + 样本选择。
 // 样式全部静态 Tailwind utility——不注入运行时 <style>（CSP 友好，T-009 沿用）。
-// Swiss Industrial Print：墨线面板 · 珊瑚单强调 · mono 描边快选芯片 · 分段控制，零圆角零图标。
+// Swiss Industrial Print：编号区段制式 · 字段规线 · 双色快选芯片 · 珊瑚主 CTA，零圆角零图标。
 
 import { useState } from "react";
 import type { Protocol } from "../../../engine/types";
@@ -21,8 +21,9 @@ interface Props {
   busy: boolean;
 }
 
+/** 输入规线：统一 h-10 高度 + px-3 内边距，全部字段同一基线区（POL2） */
 const inputCls =
-  "w-full px-3 py-2.5 border border-line bg-panel text-sm text-ink placeholder:text-ink-3 transition-colors duration-150 ease-(--ease) focus:border-accent";
+  "w-full h-10 px-3 border border-line bg-panel text-sm text-ink placeholder:text-ink-3 transition-colors duration-150 ease-(--ease) focus:border-accent";
 
 /** 模型矩阵 endpoint（base）→ 完整 Request URL */
 export function fullRequestUrl(endpoint: string, protocol: Protocol): string {
@@ -91,14 +92,18 @@ export function BenchForm({ onRun, busy }: Props) {
         </fieldset>
       </div>
 
-      {/* 表单体：快选区与请求定义区以发丝线分节 */}
-      <div className="p-5 md:p-6 space-y-5">
+      {/* 表单体：编号区段制式——快选区与请求定义区以发丝线分节，间距走 8px 栅格 */}
+      <div className="p-5 md:p-6 space-y-6">
         {/* 模型矩阵快选（预填完整 Request URL；key 永不预填） */}
-        <section className="space-y-2.5">
-          <SecHead tag="MODEL PRESET" sub="快选 · 点击预填 URL 与模型，Key 不预填" />
+        <section className="space-y-3">
+          <SecHead num="01" tag="MODEL PRESET" sub="快选 · 点击预填 URL 与模型，Key 不预填" />
           <div className="flex flex-wrap items-center gap-1.5">
             {MODEL_MATRIX.map((m) => {
               const active = v.model === m.model;
+              // chip 双色制（EYE P2-2）：渠道名（ink-3）+ 模型名（ink/选中珊瑚）按首个空格拆分
+              const sp = m.name.indexOf(" ");
+              const provider = sp > 0 ? m.name.slice(0, sp) : "";
+              const model = sp > 0 ? m.name.slice(sp + 1) : m.name;
               return (
                 <button
                   key={m.id}
@@ -113,13 +118,20 @@ export function BenchForm({ onRun, busy }: Props) {
                       protocol: m.protocol,
                     }))
                   }
-                  className={`inline-flex items-center px-2.5 py-1 font-mono text-[11px] border transition-colors duration-150 ease-(--ease) cursor-pointer ${
+                  className={`group inline-flex items-baseline px-2.5 py-1 font-mono text-[11px] border transition-colors duration-150 ease-(--ease) cursor-pointer ${
                     active
-                      ? "border-accent text-accent bg-accent/10"
-                      : "border-line-2 text-ink-2 bg-panel hover:bg-ink hover:text-paper hover:border-ink"
+                      ? "border-[1.5px] border-accent bg-accent/10"
+                      : "border border-line-2 bg-panel hover:bg-ink hover:border-ink"
                   }`}
                 >
-                  {m.name}
+                  {provider && (
+                    <span className="text-ink-3 group-hover:text-paper/70">{provider} </span>
+                  )}
+                  <span
+                    className={`${active ? "text-accent" : "text-ink group-hover:text-paper"}`}
+                  >
+                    {model}
+                  </span>
                 </button>
               );
             })}
@@ -127,7 +139,7 @@ export function BenchForm({ onRun, busy }: Props) {
         </section>
 
         <section className="space-y-4">
-          <SecHead tag="REQUEST" sub="请求定义" />
+          <SecHead num="02" tag="REQUEST" sub="请求定义" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="显示名" hint="榜单展示，可留空">
               <input
@@ -148,7 +160,7 @@ export function BenchForm({ onRun, busy }: Props) {
             </Field>
           </div>
 
-          <Field label="Request URL（完整请求地址）" hint={URL_FIELD_HINT}>
+          <Field label="Request URL（完整请求地址）" hint={URL_FIELD_HINT} hintEnd>
             <input
               value={v.requestUrl}
               onChange={(e) => set("requestUrl", e.target.value)}
@@ -173,7 +185,7 @@ export function BenchForm({ onRun, busy }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowKey((s) => !s)}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 font-mono text-[11px] text-ink-2 bg-panel-2 border border-line-2 cursor-pointer transition-colors duration-150 ease-(--ease) hover:bg-ink hover:text-paper hover:border-ink"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 px-2 font-mono text-[11px] text-ink-2 bg-panel-2 border border-line-2 cursor-pointer transition-colors duration-150 ease-(--ease) hover:bg-ink hover:text-paper hover:border-ink"
                   aria-label={showKey ? "隐藏 Key" : "显示 Key"}
                 >
                   {showKey ? "隐藏 Key" : "显示 Key"}
@@ -181,28 +193,46 @@ export function BenchForm({ onRun, busy }: Props) {
               </div>
             </Field>
             <Field label="取样" hint="多次取中位数">
-              <select
-                value={v.samples}
-                onChange={(e) => set("samples", Number(e.target.value))}
-                aria-label="取样"
-                className={`${inputCls} cursor-pointer`}
-              >
-                <option value={1}>1 次</option>
-                <option value={3}>3 次</option>
-                <option value={5}>5 次</option>
-              </select>
+              {/* 原生箭头区改纯 CSS 制式记号：发丝分隔线 + 双边框 V 形（无图标） */}
+              <span className="relative block">
+                <select
+                  value={v.samples}
+                  onChange={(e) => set("samples", Number(e.target.value))}
+                  aria-label="取样"
+                  className={`${inputCls} appearance-none cursor-pointer pr-10`}
+                >
+                  <option value={1}>1 次</option>
+                  <option value={3}>3 次</option>
+                  <option value={5}>5 次</option>
+                </select>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-1.5 right-0 px-2.5 flex items-center gap-2 border-l border-line"
+                >
+                  <span className="w-1.5 h-1.5 border-r-[1.5px] border-b-[1.5px] border-ink-2 rotate-45" />
+                </span>
+              </span>
             </Field>
           </div>
         </section>
 
-        {/* 提交区：墨底纸字主按钮 + 必填红轨提示 */}
+        {/* 提交区：珊瑚主 CTA（enabled 实底 / disabled 描边废态，EYE P0-5）+ 必填红轨提示 */}
         <div className="pt-4 border-t border-line flex flex-col md:flex-row md:items-center gap-3">
           <button
             type="submit"
             disabled={busy || incomplete}
-            className="w-full md:w-auto inline-flex items-center justify-center px-8 py-3 bg-ink text-paper text-sm font-semibold hard-shadow cursor-pointer transition-colors duration-150 ease-(--ease) hover:bg-accent active:translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed"
+            className={`w-full md:w-auto h-11 inline-flex items-center justify-center px-8 border text-sm font-bold transition-colors duration-150 ease-(--ease) active:translate-y-[1px] ${
+              busy || incomplete
+                ? "bg-panel border-line-2 text-ink-3 cursor-not-allowed"
+                : "bg-accent border-accent text-paper hard-shadow cursor-pointer hover:bg-accent-deep"
+            }`}
           >
             {busy ? "测速中…" : "开始测速"}
+            {!busy && !incomplete && (
+              <span aria-hidden="true" className="ml-3 font-mono text-sm font-normal">
+                ↵
+              </span>
+            )}
           </button>
           {incomplete && (
             <p className="border-l-2 border-bad pl-2.5 text-xs text-bad">
@@ -215,10 +245,16 @@ export function BenchForm({ onRun, busy }: Props) {
   );
 }
 
-/** 区块标题：mono 大写标签 + 右侧发丝延伸线（agent-hive .sec>h2 同构） */
-function SecHead({ tag, sub }: { tag: string; sub?: string }) {
+/** 区块标题：mono 编号（珊瑚）+ 大写标签 + 右侧发丝延伸线（印刷表单编号区段制式） */
+function SecHead({ num, tag, sub }: { num: string; tag: string; sub?: string }) {
   return (
-    <div className="flex items-center gap-3 min-w-0">
+    <div className="flex flex-wrap items-center gap-3 min-w-0">
+      <span
+        aria-hidden="true"
+        className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-accent whitespace-nowrap"
+      >
+        {num} ·
+      </span>
       <span className="lbl-mono whitespace-nowrap">{tag}</span>
       {sub && <span className="text-[11px] text-ink-3 whitespace-nowrap">{sub}</span>}
       <span aria-hidden="true" className="h-px flex-1 bg-line-2" />
@@ -229,17 +265,24 @@ function SecHead({ tag, sub }: { tag: string; sub?: string }) {
 function Field({
   label,
   hint,
+  hintEnd,
   children,
 }: {
   label: string;
   hint?: string;
+  /** 长_hint 例外：右对齐到列远端（仅 Request URL） */
+  hintEnd?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <label className="block min-w-0">
-      <span className="flex items-baseline justify-between mb-1.5 gap-2">
+      <span className="flex items-baseline gap-2 mb-2">
         <span className="text-[13px] font-semibold text-ink">{label}</span>
-        {hint && <span className="text-[11px] text-ink-3 text-right">{hint}</span>}
+        {hint && (
+          <span className={`text-[11px] text-ink-3 ${hintEnd ? "ml-auto text-right" : ""}`}>
+            {hint}
+          </span>
+        )}
       </span>
       {children}
     </label>

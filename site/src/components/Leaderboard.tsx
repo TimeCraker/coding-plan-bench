@@ -2,8 +2,10 @@
 // - 三个互不混排的分区：可比排名（comparability key 分组）/ 示例（demo）/ 遗留（legacy，不可排名）
 // - 只有兼容 complete 参与对应 metric 排名；TPS 排名额外要求 provider usage
 // - 删除：立即生效 + aria-live 恢复（不自动消失）；清空：稳定确认对话（非 3 秒文字切换）
-// - Swiss Industrial Print：行式列表 + 左侧 3px 状态色轨 + 固定列基准宽（列对齐铁律：
+// - Swiss Industrial Print：行式列表 + 左侧 4px 状态色轨 + 固定列基准宽（列对齐铁律：
 //   每列固定 flex-basis + min-width:0 + 内容省略，宽度由基准决定、与内容无关）
+// - 成绩公报制式：前三名 rank 大数字（#1 珊瑚 + 底部短规线）、本组最优值珊瑚下划规线、
+//   列内单位恒定（TTFT 恒 ms / Total 恒 s，EYE P2-1）
 
 import { useState, type ReactNode } from "react";
 import type {
@@ -101,13 +103,15 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
 
   return (
     <section
-      className="anim-fade-up bg-panel border border-ink hard-shadow"
+      className="anim-fade-up bg-panel border-[1.5px] border-ink hard-shadow"
       data-testid="leaderboard"
     >
-      {/* 头部：mono 区块标题 + 发丝延伸线 + 右侧操作 */}
+      {/* 头部：编号制 mono 区块标题（03 序列 = 执行位置 01 / 表单 02 之后）+ 发丝延伸线 + 右侧操作 */}
       <header className="px-4 pt-4 md:px-5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="lbl-mono flex min-w-0 flex-1 items-center gap-3">
-          <span className="whitespace-nowrap">本机榜单 · LEADERBOARD</span>
+          <span className="whitespace-nowrap">
+            <span className="text-accent">03</span> · LEADERBOARD · 本机榜单
+          </span>
           <span aria-hidden="true" className="h-px flex-1 bg-line-2" />
         </h2>
         {entries.length > 0 &&
@@ -134,9 +138,22 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
             </button>
           ))}
       </header>
-      <p className="mt-2 px-4 font-mono text-[11px] text-ink-3 tabular md:px-5">
-        可比 {rankable.length} 条 · 示例 {demos.length} 条 · 遗留 {legacy.length} 条
-        {groupKeys.size > 1 ? ` · ${groupKeys.size} 个条件组` : ""}
+      {/* 计数行制式：每段 = 数值（600 墨）+ 标签（ink-3），段间 mono 中点分隔 */}
+      <p className="mt-2 px-4 font-mono text-[11px] tabular tracking-[0.02em] md:px-5">
+        <span className="text-ink-3">可比 </span>
+        <span className="font-semibold text-ink">{rankable.length}</span>
+        <span className="text-ink-3"> 条 · 示例 </span>
+        <span className="font-semibold text-ink">{demos.length}</span>
+        <span className="text-ink-3"> 条 · 遗留 </span>
+        <span className="font-semibold text-ink">{legacy.length}</span>
+        <span className="text-ink-3"> 条</span>
+        {groupKeys.size > 1 && (
+          <>
+            <span className="text-ink-3"> · </span>
+            <span className="font-semibold text-ink">{groupKeys.size}</span>
+            <span className="text-ink-3"> 个条件组</span>
+          </>
+        )}
       </p>
 
       {/* 排序指标 tablist：2px 墨底线，选中态珊瑚底线与墨线对齐（agent-hive .tab 式） */}
@@ -216,13 +233,19 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
       <div className="px-4 pb-4 pt-1 md:px-5">
         <SectionLabel>可比排名（同 profile · 同测量版本 · 同执行位置 · 完整结果）</SectionLabel>
         {sorted.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 border border-dashed border-line py-12">
-            <span className="lbl-mono border border-line-2 px-2 py-1">NO DATA</span>
+          <div className="flex flex-col items-center gap-3 border border-dashed border-line-2 py-12">
+            <span className="border border-accent px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
+              NO DATA
+            </span>
+            <span aria-hidden="true" className="font-mono text-[10px] tracking-[0.14em] text-ink-3">
+              — AWAITING FIRST RUN —
+            </span>
             <p className="text-[13px] text-ink-3">还没有可比较的记录——完成一次测速后会出现在这里</p>
+            <span className="font-mono text-[10px] tracking-[0.14em] text-ink-3">RUN #001 · 待产生</span>
           </div>
         ) : (
           <ul className="border border-line-2">
-            <ColumnHeader />
+            <ColumnHeader metric={metric} />
             {sorted.map((e, i) => (
               <Row
                 key={e.id}
@@ -273,17 +296,20 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** 桌面列头（与条目行共用列基准；移动端隐藏，改由每个指标单元格内联 mono 小标） */
-function ColumnHeader() {
-  const lbl = "py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-3";
+/** 桌面列头（与条目行共用列基准；移动端隐藏，改由每个指标单元格内联 mono 小标）。
+ *  当前排序指标列珊瑚强调（与最优值下划规线呼应）；与首行间距 mb-2 */
+function ColumnHeader({ metric }: { metric: Metric }) {
+  const base = "py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em]";
+  const lbl = `${base} text-ink-3`;
+  const lblOn = `${base} text-accent`;
   return (
-    <div aria-hidden="true" className="hidden border-b border-line bg-panel-2 md:flex">
-      <span className="w-[3px] flex-none" />
+    <div aria-hidden="true" className="mb-2 hidden border-b border-line bg-panel-2 md:flex">
+      <span className="w-[4px] flex-none" />
       <span className={`${COL_RANK} ${lbl} text-center`}>#</span>
       <span className={`${COL_MAIN} ${lbl}`}>条目</span>
-      <span className={`${METRIC_COL.ttft} ${lbl} pr-4 text-right`}>TTFT</span>
-      <span className={`${METRIC_COL.tps} ${lbl} pr-4 text-right`}>TPS</span>
-      <span className={`${METRIC_COL.total} ${lbl} pr-4 text-right`}>TOTAL</span>
+      <span className={`${METRIC_COL.ttft} ${metric === "ttft" ? lblOn : lbl} pr-4 text-right`}>TTFT</span>
+      <span className={`${METRIC_COL.tps} ${metric === "tps" ? lblOn : lbl} pr-4 text-right`}>TPS</span>
+      <span className={`${METRIC_COL.total} ${metric === "total" ? lblOn : lbl} pr-4 text-right`}>TOTAL</span>
       <span className={`${COL_TRANSPORT} ${lbl} text-center`}>来源</span>
       <span className={COL_ACTION} />
     </div>
@@ -304,11 +330,14 @@ function metricValue(e: LeaderboardEntryV2, m: Metric): number | null {
   return null;
 }
 
-/** 单元格文案：缺数据即「—」（不伪装）；legacy 的 TPS 沿用旧值展示 */
+/** 单元格文案：缺数据即「—」（不伪装）；legacy 的 TPS 沿用旧值展示；
+ *  列内单位恒定（EYE P2-1）：TTFT 恒 ms、Total 恒 s，同列不再 ms/s 混排 */
 function metricCellText(e: LeaderboardEntryV2, m: Metric): string {
   if (m === "tps" && e.run?.aggregate.tps == null && !e.legacy) return "—";
   const v = metricValue(e, m);
-  return v === null ? "—" : m === "tps" ? fmtTps(v) : fmtMs(v);
+  if (v === null) return "—";
+  if (m === "tps") return fmtTps(v);
+  return fmtMs(v, m === "ttft" ? "ms" : "s");
 }
 
 function Row({
@@ -340,23 +369,35 @@ function Row({
   return (
     <li className="anim-fade-in flex flex-wrap items-stretch border-b border-line transition-colors duration-150 last:border-b-0 hover:bg-panel-2">
       {/* 左侧状态色轨 */}
-      <span aria-hidden="true" className={`w-[3px] flex-none ${rail}`} />
-      {/* 排名（mono 大数字；本组最优 = 珊瑚） */}
+      <span aria-hidden="true" className={`w-[4px] flex-none ${rail}`} />
+      {/* 排名：前三名戏剧化大数字（#1 珊瑚 + 底部 3px 短规线 / #2 #3 墨 600），其余次级 */}
       <div className={`${COL_RANK} flex items-center justify-center`}>
         {rank ? (
-          <span
-            className={`font-mono tabular text-[15px] md:text-[17px] ${
-              best ? "font-bold text-accent" : "font-semibold text-ink-2"
-            }`}
-          >
-            {String(rank).padStart(2, "0")}
+          <span className="relative inline-flex flex-col items-center">
+            <span
+              className={
+                rank <= 3
+                  ? `font-mono tabular tracking-tighter text-2xl leading-none ${
+                      best ? "font-bold text-accent" : "font-semibold text-ink"
+                    }`
+                  : "font-mono tabular text-[15px] leading-none font-semibold text-ink-2 md:text-[17px]"
+              }
+            >
+              {String(rank).padStart(2, "0")}
+            </span>
+            {best && (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-[7px] left-1/2 h-[3px] w-5 -translate-x-1/2 bg-accent"
+              />
+            )}
           </span>
         ) : (
           <span className="font-mono text-[13px] text-ink-3">—</span>
         )}
       </div>
       {/* 主列：标签 + 模型/出处（min-width:0 + 省略） */}
-      <div className={`${COL_MAIN} flex flex-col justify-center gap-[3px] py-3 pr-3`}>
+      <div className={`${COL_MAIN} flex flex-col justify-center gap-[3px] py-3.5 pr-3`}>
         <div className="flex min-w-0 items-center gap-2">
           <span className={`truncate text-[13.5px] font-semibold ${dim ? "text-ink-2" : "text-ink"}`}>
             {entry.label || entry.model}
@@ -382,14 +423,15 @@ function Row({
           {provenance}
         </p>
       </div>
-      {/* 指标区：移动端折行横排（对齐主列起点）；桌面经 md:contents 提升为固定宽右对齐三列 */}
-      <div className="flex basis-full flex-wrap items-baseline gap-x-4 gap-y-1 pb-3 pl-[47px] md:contents">
+      {/* 指标区：移动端折行横排（对齐主列起点，pl = 4px 轨 + 44px rank 列）；桌面经 md:contents 提升为固定宽右对齐三列 */}
+      <div className="flex basis-full flex-wrap items-baseline gap-x-4 gap-y-1 pb-3.5 pl-[48px] md:contents">
         {METRICS.map((m) => {
           const active = metric === m.id;
           const value = metricCellText(entry, m.id);
+          /* 当前排序指标列：本组最优值 = 珊瑚 700 + 2px 下划规线（印刷汇总强调线） */
           const valueCls = active
             ? best
-              ? "font-bold text-ink"
+              ? "border-b-2 border-accent font-bold text-accent"
               : "font-semibold text-ink"
             : dim
               ? "text-ink-3"

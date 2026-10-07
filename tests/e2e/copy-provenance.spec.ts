@@ -90,7 +90,8 @@ test.describe("copy and provenance", () => {
     const text = await method.innerText();
     expect(text).toContain("TTFT");
     expect(text).toContain("TPS");
-    expect(text).toContain("Total");
+    // 术语码在方法学制式中大写渲染（TOTAL），锚语义不锚字形
+    expect(text.toLowerCase()).toContain("total");
     expect(text).toContain("中位数");
   });
 });

@@ -1,10 +1,11 @@
 // 应用壳页首（Swiss Industrial Print，对齐 agent-hive 面板骨架）：
-// masthead 品牌行 + sticky 导航 tabs，桌面/移动统一为同一顶部结构
+// masthead 品牌行（版心顶规线 + 版号戳）+ sticky 导航 tabs，桌面/移动统一为同一顶部结构
 // （原「玻璃侧边栏 + 移动端双导航」与主题切换已随壳层重构移除）。
 
 export type View = "bench" | "global";
 
-// tab 前几何方点 / 选中底线同色：测速台 = run 蓝（实测进行语义）、能力榜 = accent 珊瑚
+// tab 前几何方点保留 per-tab 语义色（测速台 = run 蓝实测语义、能力榜 = accent 珊瑚）；
+// 选中底线统一珊瑚——「选中」是全局语义，底线不做第二强调色（EYE P0 修正）
 const NAV: { id: View; label: string; dot: string }[] = [
   { id: "bench", label: "测速台", dot: "bg-run" },
   { id: "global", label: "能力榜", dot: "bg-accent" },
@@ -18,8 +19,8 @@ interface Props {
 export function Masthead({ view, onView }: Props) {
   return (
     <>
-      {/* masthead：几何 mark + 字标堆叠 + 右侧 meta 徽章列 */}
-      <header className="mx-auto w-full max-w-[1240px] px-4 pt-6 md:px-9 md:pt-8">
+      {/* masthead：版心顶规线（印刷版面顶线）+ 几何 mark + 字标堆叠 + 右侧版号戳列 */}
+      <header className="mx-auto w-full max-w-[1240px] border-t-2 border-ink px-4 pt-5 md:px-9 md:pt-6">
         <div className="flex flex-wrap items-center gap-x-3.5 gap-y-3">
           {/* 几何 mark：16px 珊瑚方块 + 3px 纸色 inset（agent-hive .mark 同构） */}
           <span className="relative h-4 w-4 shrink-0 bg-accent" aria-hidden="true">
@@ -29,14 +30,14 @@ export function Masthead({ view, onView }: Props) {
             <span className="font-disp text-[18px] font-bold leading-none tracking-[-0.03em] text-ink whitespace-nowrap md:text-[22px]">
               Coding Plan Bench
             </span>
-            <span className="font-mono text-[10.5px] leading-none tracking-[0.14em] text-ink-3 whitespace-nowrap">
-              CPB · 可信测速台
+            <span className="font-mono text-[10.5px] leading-none tracking-[0.12em] text-ink-3 whitespace-nowrap">
+              CPB · 可信测速台 · EST. 2026
             </span>
           </div>
-          {/* meta 徽章列：profile 事实 + GitHub 源码（描边 mono 小徽章） */}
+          {/* 版号戳列：固定版次记号 + GitHub 源码（描边 mono 小徽章，折叠不丢） */}
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <span className="border border-line-2 bg-panel px-3 py-[5px] font-mono text-[11px] whitespace-nowrap text-ink-2">
-              profile · cpb-standard@1
+              EDITION · 2026-10
             </span>
             <a
               href="https://github.com/TimeCraker/coding-plan-bench"
@@ -67,9 +68,9 @@ export function Masthead({ view, onView }: Props) {
               >
                 <span className={`st-dot ${n.dot}`} aria-hidden="true" />
                 {n.label}
-                {/* 选中底线：2px 色条压在导航墨线上（inset 定位，不依赖负 margin，横向滚动安全） */}
+                {/* 选中底线：2px 珊瑚色条压在导航墨线上（inset 定位，不依赖负 margin，横向滚动安全） */}
                 {active && (
-                  <span className={`absolute inset-x-0 bottom-0 h-0.5 ${n.dot}`} aria-hidden="true" />
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" aria-hidden="true" />
                 )}
               </button>
             );

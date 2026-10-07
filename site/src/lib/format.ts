@@ -1,6 +1,11 @@
 // 数字 / 时间格式化 + count-up 缓动
 
-export function fmtMs(ms: number): string {
+/** 时长单位策略：auto=按量级自适应（旧行为）；ms/s=列内恒定单位（表格列排版用，避免同列 ms/s 混排） */
+export type DurationUnit = "auto" | "ms" | "s";
+
+export function fmtMs(ms: number, unit: DurationUnit = "auto"): string {
+  if (unit === "ms") return `${Math.round(ms)}ms`;
+  if (unit === "s") return `${(ms / 1000).toFixed(2)}s`;
   if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`;
   return `${Math.round(ms)}ms`;
 }
