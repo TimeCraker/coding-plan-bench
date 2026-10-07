@@ -1,9 +1,9 @@
 // 执行位置选择（FR-001）：fieldset + radio 显式语义；每个选项直接展示 Key 路径。
 // transport 是唯一决定 Key 去向的输入——samples 永不影响它。
+// Swiss 行式选择列表：墨线外框 + 3px 语义色轨 + 选中珊瑚方标，零圆角零图标。
 
 import type { TransportKind } from "../../../engine/types";
 import { LOCAL_APP_HINT, TRANSPORT_COPY } from "../content/copy";
-import { Download } from "lucide-react";
 
 interface Props {
   value: TransportKind;
@@ -11,61 +11,83 @@ interface Props {
   onChange: (t: TransportKind) => void;
 }
 
+/** 左侧 3px 状态轨：执行位置的数据语义色（直连=run / 代理=warn / 本地=ok），非装饰 */
+const RAIL: Record<TransportKind, string> = {
+  "browser-direct": "bg-run",
+  "trusted-proxy": "bg-warn",
+  "tauri-local": "bg-ok",
+};
+
 export function TransportSelector({ value, available, onChange }: Props) {
   const all: TransportKind[] = ["browser-direct", "trusted-proxy", "tauri-local"];
   return (
     <fieldset
       data-testid="transport-selector"
-      className="bg-surface rounded-2xl border border-app shadow-md-card p-5 min-w-0"
+      className="bg-panel border-[1.5px] border-ink hard-shadow min-w-0"
     >
-      <legend className="text-[13px] font-semibold text-app px-1">
+      <legend className="px-2 text-[13px] font-semibold text-ink bg-panel">
         执行位置（决定 Key 路径）
       </legend>
-      <div className="mt-3 space-y-2">
-        {all.map((t) => {
+      <div>
+        {all.map((t, i) => {
           const enabled = available.includes(t);
           const active = value === t && enabled;
           const copy = TRANSPORT_COPY[t];
           return (
             <label
               key={t}
-              className={`flex items-start gap-3 rounded-xl border p-3.5 transition-colors cursor-pointer ${
+              className={`relative flex items-stretch transition-colors duration-150 ease-(--ease)${
+                i > 0 ? " border-t border-line" : ""
+              } ${
                 active
-                  ? "border-primary bg-primary-soft"
+                  ? "bg-panel-2 cursor-pointer"
                   : enabled
-                    ? "border-app bg-surface-2 hover:border-strong"
-                    : "border-app bg-surface-2 opacity-50 cursor-not-allowed"
+                    ? "bg-panel hover:bg-panel-2 cursor-pointer"
+                    : "bg-panel cursor-not-allowed"
               }`}
             >
+              {/* radio 视觉隐藏但占满整行：可聚焦（全局珊瑚 focus 环），点击语义保留 */}
               <input
                 type="radio"
                 name="transport"
-                className="mt-1 accent-[var(--primary)]"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                 checked={active}
                 disabled={!enabled}
                 onChange={() => enabled && onChange(t)}
               />
-              <span className="min-w-0">
-                <span className="block text-[13px] font-semibold text-app">
+              <span aria-hidden="true" className={`w-[3px] flex-none ${RAIL[t]}`} />
+              <span className="flex-1 min-w-0 px-4 py-3 flex flex-col gap-1">
+                <span
+                  className={`text-[13px] font-semibold ${enabled ? "text-ink" : "text-mute"}`}
+                >
                   {copy.label}
                 </span>
-                <span className="mt-0.5 block text-xs text-muted leading-relaxed">
+                <span
+                  className={`text-xs leading-relaxed ${enabled ? "text-ink-2" : "text-mute"}`}
+                >
                   {copy.keyPath}
                 </span>
+              </span>
+              <span className="flex items-center pr-4 flex-none">
+                {active ? (
+                  <span aria-hidden="true" className="w-2 h-2 bg-accent" />
+                ) : (
+                  !enabled && <span className="lbl-mono">N/A</span>
+                )}
               </span>
             </label>
           );
         })}
       </div>
       {!available.includes("tauri-local") && (
-        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
-          <Download className="w-3 h-3 shrink-0" />
+        <p className="border-t border-line px-4 py-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] text-ink-3 leading-relaxed">
+          <span aria-hidden="true">↓</span>
           {LOCAL_APP_HINT}
           <a
             href="https://github.com/TimeCraker/coding-plan-bench/releases"
             target="_blank"
             rel="noreferrer"
-            className="text-primary font-medium hover:underline"
+            className="text-accent font-semibold hover:underline"
           >
             下载
           </a>

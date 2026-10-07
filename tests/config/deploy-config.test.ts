@@ -1,6 +1,6 @@
 // T-010 部署配置测试（AC-012 / test:deploy-config）：
 // _headers 可解析且含必需安全头；wrangler vars 完整；构建产物携带 headers。
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -97,12 +97,20 @@ describe("deploy workflows 策略", () => {
 });
 
 describe("构建产物", () => {
+  // Windows 本地实测（2026-10-07）：vitest worker 内嵌 build 在 %TEMP%（含其新建子目录）下
+  // 会触发 esbuild 临时文件 EPERM（"[commonjs--resolver] remove ...: Access is denied"，
+  // vitest 内 100% 复现、vitest 外恒过）；同样的新建目录放在仓库内则恒过——本机 %TEMP%
+  // 被 filter driver/AV 特殊盯防所致。将子进程 TMP/TEMP 指到仓库内 gitignored 目录规避；
+  // esbuild 正常路径自清理临时文件，CI(Linux) 不受影响。
+  const buildTmp = path.join(ROOT, ".vite", "esbuild-tmp");
+
   beforeAll(() => {
+    mkdirSync(buildTmp, { recursive: true });
     // 本地验证用真实构建产物（CI 同命令）
     execSync("npm run build", {
       cwd: ROOT,
       stdio: "pipe",
-      env: { ...process.env, TMP: process.env.TMP, TEMP: process.env.TEMP },
+      env: { ...process.env, TMP: buildTmp, TEMP: buildTmp },
     });
   }, 300_000);
 
@@ -116,6 +124,7 @@ describe("构建产物", () => {
   it("dist/index.html 引用的脚本均同源（无内联 script）", () => {
     const html = readFileSync(path.join(ROOT, "site/dist/index.html"), "utf8");
     expect(html).not.toMatch(/<script(?![^>]*src=)[^>]*>/);
-    expect(html).toMatch(/<script src="\/theme-boot\.js">/);
+    // theme-boot.js 已随单浅色主题重构移除；入口为 hashed module 资产
+    expect(html).toMatch(/<script[^>]+src="\/assets\/index-[^"]+\.js"/);
   });
 });

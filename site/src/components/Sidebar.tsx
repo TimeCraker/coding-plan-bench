@@ -1,113 +1,81 @@
-import { Activity, Globe, Sun, Moon, Github, Zap } from "lucide-react";
+// 应用壳页首（Swiss Industrial Print，对齐 agent-hive 面板骨架）：
+// masthead 品牌行 + sticky 导航 tabs，桌面/移动统一为同一顶部结构
+// （原「玻璃侧边栏 + 移动端双导航」与主题切换已随壳层重构移除）。
 
 export type View = "bench" | "global";
 
-const NAV: { id: View; label: string; short: string; desc: string; icon: React.ReactNode }[] = [
-  { id: "bench", label: "测速台", short: "测速", desc: "本机实测 TTFT/TPS/Total", icon: <Activity className="w-[18px] h-[18px]" /> },
-  { id: "global", label: "能力榜", short: "能力", desc: "全球智能 / 性价比 / 订阅", icon: <Globe className="w-[18px] h-[18px]" /> },
+// tab 前几何方点 / 选中底线同色：测速台 = run 蓝（实测进行语义）、能力榜 = accent 珊瑚
+const NAV: { id: View; label: string; dot: string }[] = [
+  { id: "bench", label: "测速台", dot: "bg-run" },
+  { id: "global", label: "能力榜", dot: "bg-accent" },
 ];
 
 interface Props {
   view: View;
   onView: (v: View) => void;
-  theme: "light" | "dark";
-  onTheme: () => void;
 }
 
-export function Sidebar({ view, onView, theme, onTheme }: Props) {
+export function Masthead({ view, onView }: Props) {
   return (
     <>
-      {/* 桌面：左侧固定侧边栏 */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 h-screen sticky top-0 border-r border-app bg-surface/60 backdrop-blur-xl">
-        {/* Logo */}
-        <div className="px-5 h-16 flex items-center gap-2.5 border-b border-app">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-glow-card shrink-0">
-            <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-[14px] font-bold leading-tight text-app tracking-tight truncate">Coding Plan Bench</h1>
-            <p className="text-[10px] text-muted leading-tight">模型评测台</p>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted/70">功能</p>
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => onView(n.id)}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer text-left ${view === n.id ? "bg-primary shadow-glow-card" : "hover:bg-surface-2"}`}
-              style={{ color: view === n.id ? "#fff" : "var(--text)" }}
-              data-active={view === n.id}
-            >
-              <span className="relative z-10 shrink-0">{n.icon}</span>
-              <span className="relative z-10 min-w-0">
-                <span className="block text-[13px] font-semibold leading-tight">{n.label}</span>
-                <span className={`block text-[10px] leading-tight truncate ${view === n.id ? "text-white" : "text-muted"}`}>{n.desc}</span>
-              </span>
-            </button>
-          ))}
-        </nav>
-
-        {/* 底部操作 */}
-        <div className="px-3 py-4 border-t border-app space-y-1">
-          <button
-            onClick={onTheme}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-2 transition-colors cursor-pointer text-muted hover:text-app"
-          >
-            <span key={theme} className="inline-block anim-fade-in">
-              {theme === "light" ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}
+      {/* masthead：几何 mark + 字标堆叠 + 右侧 meta 徽章列 */}
+      <header className="mx-auto w-full max-w-[1240px] px-4 pt-6 md:px-9 md:pt-8">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-3">
+          {/* 几何 mark：16px 珊瑚方块 + 3px 纸色 inset（agent-hive .mark 同构） */}
+          <span className="relative h-4 w-4 shrink-0 bg-accent" aria-hidden="true">
+            <span className="absolute inset-[3px] bg-paper" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="font-disp text-[18px] font-bold leading-none tracking-[-0.03em] text-ink whitespace-nowrap md:text-[22px]">
+              Coding Plan Bench
             </span>
-            <span className="text-[13px] font-medium">{theme === "light" ? "深色模式" : "浅色模式"}</span>
-          </button>
-          <a
-            href="https://github.com/TimeCraker/coding-plan-bench"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-2 transition-colors cursor-pointer text-muted hover:text-app"
-          >
-            <Github className="w-[18px] h-[18px]" />
-            <span className="text-[13px] font-medium">GitHub</span>
-          </a>
-        </div>
-      </aside>
-
-      {/* 移动端：顶部横向 nav（替代侧边栏） */}
-      <div className="md:hidden sticky top-0 z-30 bg-glass border-b border-app">
-        <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-glow-card">
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-[13px] font-bold text-app tracking-tight">Coding Plan Bench</span>
+            <span className="font-mono text-[10.5px] leading-none tracking-[0.14em] text-ink-3 whitespace-nowrap">
+              CPB · 可信测速台
+            </span>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={onTheme} className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="切换主题">
-              {theme === "light" ? <Moon className="w-[18px] h-[18px]" /> : <Sun className="w-[18px] h-[18px]" />}
-            </button>
-            <a href="https://github.com/TimeCraker/coding-plan-bench" target="_blank" rel="noreferrer" className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-surface-2 transition-colors cursor-pointer text-muted" aria-label="GitHub（源码仓库）">
-              <Github className="w-[18px] h-[18px]" />
+          {/* meta 徽章列：profile 事实 + GitHub 源码（描边 mono 小徽章） */}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="border border-line-2 bg-panel px-3 py-[5px] font-mono text-[11px] whitespace-nowrap text-ink-2">
+              profile · cpb-standard@1
+            </span>
+            <a
+              href="https://github.com/TimeCraker/coding-plan-bench"
+              target="_blank"
+              rel="noreferrer"
+              className="cursor-pointer border border-line-2 bg-panel px-3 py-[5px] font-mono text-[11px] whitespace-nowrap text-ink-2 transition-colors hover:bg-panel-2 hover:text-ink"
+            >
+              GitHub
             </a>
           </div>
         </div>
-        {/* 横向 nav */}
-        <div className="flex px-4 pb-2 gap-1">
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => onView(n.id)}
-              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer ${view === n.id ? "bg-primary" : ""}`}
-              style={{ color: view === n.id ? "#fff" : "var(--text-muted)" }}
-            >
-              <span className="relative z-10 flex items-center gap-1.5">
-                {n.icon}
+      </header>
+
+      {/* sticky 导航：纸底不透明（遮滚动内容）+ 2px 墨底线 + 状态色方点 tabs */}
+      <nav className="sticky top-0 z-[100] mt-5 border-b-2 border-ink bg-paper">
+        <div className="mx-auto flex w-full max-w-[1240px] overflow-x-auto px-4 md:px-9">
+          {NAV.map((n) => {
+            const active = view === n.id;
+            return (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => onView(n.id)}
+                data-active={active}
+                className={`relative inline-flex cursor-pointer items-center gap-2.5 px-5 py-3 text-[13.5px] font-semibold whitespace-nowrap transition-colors ${
+                  active ? "text-ink" : "text-ink-2 hover:text-ink"
+                }`}
+              >
+                <span className={`st-dot ${n.dot}`} aria-hidden="true" />
                 {n.label}
-              </span>
-            </button>
-          ))}
+                {/* 选中底线：2px 色条压在导航墨线上（inset 定位，不依赖负 margin，横向滚动安全） */}
+                {active && (
+                  <span className={`absolute inset-x-0 bottom-0 h-0.5 ${n.dot}`} aria-hidden="true" />
+                )}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </nav>
     </>
   );
 }

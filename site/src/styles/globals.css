@@ -19,7 +19,7 @@
   --color-panel-2: #f8f7f2; /* 二级面板 */
   --color-ink: #1a1a18; /* 油墨黑（非纯黑） */
   --color-ink-2: #5f5d55; /* 次级墨 */
-  --color-ink-3: #9b978c; /* 三级墨 */
+  --color-ink-3: #6f6b61; /* 三级墨（AA：纸底 4.7:1 / panel 5.2:1，原 #9b978c 仅 2.6:1 触发 axe serious） */
   --color-line: #e4e3da; /* 发丝线 */
   --color-line-2: #d0cfc5; /* 深发丝线 */
   --color-accent: #a8513c; /* 珊瑚强调——唯一强调色（TimeCraker 主站色板同源） */

@@ -1,14 +1,22 @@
 // 运行进度与代理 consent（FR-006 / Spec §4.1）：
 // - consent-required：展示实质说明，用户当次确认后才发请求
 // - running：样本 x/y、已用时、取消按钮；role=status 让辅助技术感知更新
+// Swiss Industrial Print：分段进度条（ok/bad/mute=已完成、run=在测）+ 脉冲点
+// + mono 数据标签，零图标库；动效只动 transform/opacity。
 
 import { useEffect, useState } from "react";
-import { ShieldAlert, Loader2, Square } from "lucide-react";
-import { CONSENT_ACCEPT, CONSENT_BODY, CONSENT_DECLINE, CONSENT_TITLE } from "../content/copy";
+import type { SampleResult } from "../../../engine/types";
+import {
+  CONSENT_ACCEPT,
+  CONSENT_BODY,
+  CONSENT_DECLINE,
+  CONSENT_TITLE,
+} from "../content/copy";
 
 export interface RunProgressProps {
   phase: "idle" | "validating" | "consent-required" | "running" | "settled";
-  progress: { index: number; total: number } | null;
+  /** sample 为引擎 onProgress 携带的最近完成样本，用于进度条着色 */
+  progress: { index: number; total: number; sample?: SampleResult } | null;
   onGrantConsent: () => void;
   onDeclineConsent: () => void;
   onCancel: () => void;
@@ -27,6 +35,46 @@ function ElapsedTimer() {
   return <span className="tabular">{(elapsedMs / 1000).toFixed(1)}s</span>;
 }
 
+/** 分段槽位着色：已完成=ok（最近一样本按其状态 bad/mute）、在测=run、未开始=空 */
+function segmentTone(n: number, index: number, sample?: SampleResult): string {
+  if (n === index) {
+    if (sample?.status === "failed") return "bg-bad";
+    if (sample?.status === "cancelled") return "bg-mute";
+    return "bg-ok";
+  }
+  if (n < index) return "bg-ok";
+  if (n === index + 1) return "bg-run";
+  return "";
+}
+
+/**
+ * 分段进度条（agent-hive .pbar 同构）：10px 轨道 + 发丝线分隔的等宽槽位。
+ * index = 已完成样本数（引擎逐样本回调后递增）。
+ */
+function SegmentBar({
+  index,
+  total,
+  sample,
+}: {
+  index: number;
+  total: number;
+  sample?: SampleResult;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex-1 h-[10px] bg-panel-2 border border-line flex overflow-hidden"
+    >
+      {Array.from({ length: total }, (_, i) => (
+        <div
+          key={i}
+          className={`h-full flex-1 border-r border-line last:border-r-0 ${segmentTone(i + 1, index, sample)}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function RunProgress({
   phase,
   progress,
@@ -34,33 +82,32 @@ export function RunProgress({
   onDeclineConsent,
   onCancel,
 }: RunProgressProps) {
-
   if (phase === "consent-required") {
     return (
       <div
         data-testid="proxy-consent"
         role="alert"
-        className="bg-surface rounded-2xl border border-app shadow-md-card p-5"
+        className="bg-panel border border-ink border-l-[3px] border-l-warn hard-shadow p-5"
       >
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-            <ShieldAlert className="w-4 h-4 text-orange-500" />
-          </div>
-          <h2 className="text-[15px] font-semibold text-app">{CONSENT_TITLE}</h2>
+          <span className="st-dot bg-warn" aria-hidden="true" />
+          <h2 className="text-[15px] font-semibold text-ink">{CONSENT_TITLE}</h2>
         </div>
-        <p className="mt-3 text-[13px] text-muted leading-relaxed">{CONSENT_BODY}</p>
+        <p className="mt-3 text-[13px] text-ink-2 leading-relaxed">
+          {CONSENT_BODY}
+        </p>
         <div className="mt-4 flex flex-wrap gap-2.5">
           <button
             type="button"
             onClick={onGrantConsent}
-            className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover transition-colors cursor-pointer"
+            className="px-4 py-2 bg-ink border border-ink text-paper text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:opacity-90 active:translate-y-[1px]"
           >
             {CONSENT_ACCEPT}
           </button>
           <button
             type="button"
             onClick={onDeclineConsent}
-            className="px-4 py-2 rounded-xl bg-surface-2 border border-app text-sm font-medium text-muted hover:text-app transition-colors cursor-pointer"
+            className="px-4 py-2 bg-panel border border-ink text-ink text-sm font-medium cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:bg-ink hover:text-paper active:translate-y-[1px]"
           >
             {CONSENT_DECLINE}
           </button>
@@ -71,31 +118,49 @@ export function RunProgress({
 
   if (phase !== "running") return null;
 
+  const index = progress ? progress.index : 1;
+  const totalLabel = progress ? String(progress.total) : "?";
+
   return (
     <div
       data-testid="run-progress"
       role="status"
       aria-live="polite"
-      className="bg-surface rounded-2xl border border-app shadow-md-card p-5 flex items-center gap-4"
+      className="bg-panel border border-ink hard-shadow p-5"
     >
-      <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-app">
-          测速进行中 · 样本 {progress ? progress.index : 1}/
-          {progress ? progress.total : "?"}
+      {/* 头部：脉冲点 + mono 状态标签 + 取消 */}
+      <div className="flex items-center gap-3">
+        <span className="pulse-dot bg-run shrink-0" aria-hidden="true" />
+        <p className="lbl-mono">
+          RUNNING · SAMPLE <span className="tabular">{index}</span>/
+          <span className="tabular">{totalLabel}</span>
         </p>
-        <p className="text-xs text-muted mt-0.5 tabular">
-          已用时 <ElapsedTimer /> · 串行执行，避免带宽竞争
-        </p>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="ml-auto shrink-0 px-3.5 py-2 bg-panel border border-ink font-mono text-xs font-semibold text-ink cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:bg-ink hover:text-paper active:translate-y-[1px]"
+        >
+          取消
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-2 border border-app text-sm font-medium text-muted hover:text-red-500 hover:border-red-300 transition-colors cursor-pointer shrink-0"
-      >
-        <Square className="w-3.5 h-3.5" />
-        取消
-      </button>
+
+      {/* 分段进度条 + mono 计数 */}
+      {progress && (
+        <div className="mt-3 flex items-center gap-3">
+          <SegmentBar
+            index={progress.index}
+            total={progress.total}
+            sample={progress.sample}
+          />
+          <span className="tabular text-xs text-ink-2 shrink-0" aria-hidden="true">
+            {progress.index}/{progress.total}
+          </span>
+        </div>
+      )}
+
+      <p className="mt-2.5 text-xs text-ink-2">
+        已用时 <ElapsedTimer /> · 串行执行，避免带宽竞争
+      </p>
     </div>
   );
 }

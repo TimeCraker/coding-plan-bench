@@ -1,11 +1,16 @@
 // 可比较榜单（FR-008 / AC-006 / AUD-007 根治）：
 // - 三个互不混排的分区：可比排名（comparability key 分组）/ 示例（demo）/ 遗留（legacy，不可排名）
 // - 只有兼容 complete 参与对应 metric 排名；TPS 排名额外要求 provider usage
-// - 删除：立即生效 + aria-live 撤销（不自动消失）；清空：稳定确认对话（非 3 秒文字切换）
+// - 删除：立即生效 + aria-live 恢复（不自动消失）；清空：稳定确认对话（非 3 秒文字切换）
+// - Swiss Industrial Print：行式列表 + 左侧 3px 状态色轨 + 固定列基准宽（列对齐铁律：
+//   每列固定 flex-basis + min-width:0 + 内容省略，宽度由基准决定、与内容无关）
 
-import { useState } from "react";
-import { Trash2, Trophy, Zap, Activity, Timer, Info, Undo2, X } from "lucide-react";
-import type { LeaderboardEntryV2 } from "../../../engine/types";
+import { useState, type ReactNode } from "react";
+import type {
+  LeaderboardEntryV2,
+  RunStatus,
+  TransportKind,
+} from "../../../engine/types";
 import { fmtMs, fmtTps } from "../lib/format";
 import {
   comparabilityKey,
@@ -19,14 +24,46 @@ const METRICS: {
   id: Metric;
   label: string;
   short: string;
-  icon: React.ReactNode;
   lowerBetter: boolean;
   unit: string;
 }[] = [
-  { id: "ttft", label: "首 token 延迟", short: "TTFT", icon: <Zap className="w-3.5 h-3.5" />, lowerBetter: true, unit: "越低越好" },
-  { id: "tps", label: "输出速度", short: "TPS", icon: <Activity className="w-3.5 h-3.5" />, lowerBetter: false, unit: "越高越好 · 需上游 usage" },
-  { id: "total", label: "总耗时", short: "Total", icon: <Timer className="w-3.5 h-3.5" />, lowerBetter: true, unit: "越低越好" },
+  { id: "ttft", label: "首 token 延迟", short: "TTFT", lowerBetter: true, unit: "越低越好" },
+  { id: "tps", label: "输出速度", short: "TPS", lowerBetter: false, unit: "越高越好 · 需上游 usage" },
+  { id: "total", label: "总耗时", short: "Total", lowerBetter: true, unit: "越低越好" },
 ];
+
+/** 状态色轨（语义即颜色）：完整=ok / 部分成功=warn / 失败=bad / 已取消=mute；遗留恒 mute */
+const STATUS_RAIL: Record<RunStatus, string> = {
+  complete: "bg-ok",
+  partial: "bg-warn",
+  failed: "bg-bad",
+  cancelled: "bg-mute",
+};
+
+/** transport 来源徽章文案 */
+const TRANSPORT_SHORT: Record<TransportKind, string> = {
+  "browser-direct": "直连",
+  "trusted-proxy": "代理",
+  "tauri-local": "本地",
+};
+
+/* mono 描边小方钮：hover 墨底/语义色反白 */
+const BTN_BASE =
+  "font-mono text-[11px] font-semibold px-2.5 py-1.5 border cursor-pointer bg-panel transition-colors duration-200";
+const BTN_NEUTRAL = `${BTN_BASE} border-line-2 text-ink-2 hover:bg-ink hover:border-ink hover:text-panel`;
+const BTN_DANGER = `${BTN_BASE} border-bad text-bad hover:bg-bad hover:text-panel`;
+const BTN_ACCENT = `${BTN_BASE} border-accent text-accent hover:bg-accent hover:text-panel`;
+
+/** 桌面列基准宽（列头与条目行共用同一份，保证行行对齐） */
+const COL_RANK = "flex-[0_0_44px] md:flex-[0_0_56px]";
+const COL_MAIN = "flex-1 md:flex-[1_1_320px] min-w-0";
+const COL_ACTION = "flex-[0_0_44px] md:flex-[0_0_64px]";
+const METRIC_COL: Record<Metric, string> = {
+  ttft: "md:flex-[0_0_92px]",
+  tps: "md:flex-[0_0_76px]",
+  total: "md:flex-[0_0_92px]",
+};
+const COL_TRANSPORT = "md:flex-[0_0_72px]";
 
 interface Props {
   entries: LeaderboardEntryV2[];
@@ -52,9 +89,6 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
     const vb = metricValue(b, metric)!;
     return cfg.lowerBetter ? va - vb : vb - va;
   });
-  const max = sorted.length
-    ? Math.max(...sorted.map((e) => metricValue(e, metric)!))
-    : 0;
 
   const handleRemove = (id: string) => {
     const { removed } = onRemove(id);
@@ -66,166 +100,147 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
   );
 
   return (
-    <div
-      className="anim-fade-up bg-surface rounded-2xl border border-app shadow-lg-card overflow-hidden"
+    <section
+      className="anim-fade-up bg-panel border border-ink hard-shadow"
       data-testid="leaderboard"
     >
-      {/* 头部：标题 + 指标切换 + 清空 */}
-      <div className="px-5 md:px-6 py-4 border-b border-app bg-surface-2/50">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary-soft flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-[15px] font-semibold text-app leading-tight">速度榜单</h2>
-              <p className="text-[11px] text-muted leading-tight">
-                可比 {rankable.length} 条 · 示例 {demos.length} 条 · 遗留 {legacy.length} 条
-                {groupKeys.size > 1 ? ` · ${groupKeys.size} 个条件组` : ""}
-              </p>
-            </div>
-          </div>
-          {entries.length > 0 && (
-            <div className="flex items-center gap-2">
-              {confirmClear ? (
-                <span
-                  role="alertdialog"
-                  aria-label="确认清空榜单"
-                  className="inline-flex items-center gap-2 text-xs"
-                >
-                  <span className="text-muted">确认清空全部记录？</span>
-                  <button
-                    onClick={() => { onClear(); setConfirmClear(false); }}
-                    className="px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-500 font-medium hover:bg-red-500/20 transition-colors cursor-pointer"
-                    data-testid="confirm-clear-yes"
-                  >
-                    确认清空
-                  </button>
-                  <button
-                    onClick={() => setConfirmClear(false)}
-                    className="px-2.5 py-1.5 rounded-lg bg-surface-2 border border-app text-muted hover:text-app transition-colors cursor-pointer"
-                    data-testid="confirm-clear-no"
-                  >
-                    取消
-                  </button>
-                </span>
-              ) : (
-                <button
-                  onClick={() => setConfirmClear(true)}
-                  className="text-xs text-muted hover:text-red-500 transition-colors cursor-pointer inline-flex items-center gap-1"
-                  data-testid="clear-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                  清空全部
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+      {/* 头部：mono 区块标题 + 发丝延伸线 + 右侧操作 */}
+      <header className="px-4 pt-4 md:px-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 className="lbl-mono flex min-w-0 flex-1 items-center gap-3">
+          <span className="whitespace-nowrap">本机榜单 · LEADERBOARD</span>
+          <span aria-hidden="true" className="h-px flex-1 bg-line-2" />
+        </h2>
+        {entries.length > 0 &&
+          (confirmClear ? (
+            <span role="alertdialog" aria-label="确认清空榜单" className="flex items-center gap-2">
+              <span className="text-xs text-ink-2">确认清空全部记录？</span>
+              <button
+                onClick={() => {
+                  onClear();
+                  setConfirmClear(false);
+                }}
+                className={BTN_DANGER}
+                data-testid="confirm-clear-yes"
+              >
+                确认清空
+              </button>
+              <button onClick={() => setConfirmClear(false)} className={BTN_NEUTRAL} data-testid="confirm-clear-no">
+                取消
+              </button>
+            </span>
+          ) : (
+            <button onClick={() => setConfirmClear(true)} className={BTN_NEUTRAL} data-testid="clear-all">
+              清空全部
+            </button>
+          ))}
+      </header>
+      <p className="mt-2 px-4 font-mono text-[11px] text-ink-3 tabular md:px-5">
+        可比 {rankable.length} 条 · 示例 {demos.length} 条 · 遗留 {legacy.length} 条
+        {groupKeys.size > 1 ? ` · ${groupKeys.size} 个条件组` : ""}
+      </p>
 
-        {/* 指标切换（同一条件组内按当前指标排序） */}
-        <div className="mt-4 space-y-2">
-          <div className="w-full overflow-x-auto">
-          <div
-            className="inline-flex bg-surface-2 rounded-lg p-0.5 border border-app"
-            role="tablist"
-            aria-label="排序指标"
-          >
-            {METRICS.map((m) => (
+      {/* 排序指标 tablist：2px 墨底线，选中态珊瑚底线与墨线对齐（agent-hive .tab 式） */}
+      <div className="mt-3 overflow-x-auto">
+        <div className="flex w-max min-w-full border-b-2 border-ink" role="tablist" aria-label="排序指标">
+          {METRICS.map((m) => {
+            const on = metric === m.id;
+            return (
               <button
                 key={m.id}
                 role="tab"
-                aria-selected={metric === m.id}
+                aria-selected={on}
                 onClick={() => setMetric(m.id)}
-                className={`relative inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                  metric === m.id ? "bg-primary text-white" : "text-muted hover:text-app"
+                className={`-mb-[2px] flex items-baseline gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 cursor-pointer transition-colors duration-200 ${
+                  on ? "border-accent text-ink" : "border-transparent text-ink-2 hover:text-ink"
                 }`}
               >
-                {m.icon}
-                <span className="hidden sm:inline">{m.label}</span>
-                <span className="sm:hidden">{m.short}</span>
+                <span className="font-mono text-[11px] font-bold tracking-wide">{m.short}</span>
+                <span className="hidden text-[13px] font-medium sm:inline">{m.label}</span>
               </button>
-            ))}
-          </div>
-          </div>
-          <span className="block text-[11px] text-muted tabular">
-            排序：{cfg.label} · <span className="text-primary font-medium">{cfg.unit} {cfg.lowerBetter ? "↓" : "↑"}</span>
-          </span>
+            );
+          })}
         </div>
       </div>
+      <p className="px-4 pt-2.5 font-mono text-[11px] text-ink-3 tabular md:px-5">
+        排序：{cfg.label} ·{" "}
+        <span className="font-semibold text-ink-2">
+          {cfg.unit} {cfg.lowerBetter ? "↓" : "↑"}
+        </span>
+      </p>
 
-      {/* 撤销 toast（稳定存在直到用户处理，aria-live 播报） */}
+      {/* 恢复 toast（稳定存在直到用户处理，aria-live 播报） */}
       {undoable && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="mx-3 mt-3 flex items-center gap-2.5 rounded-xl bg-primary-soft border border-primary/20 px-3.5 py-2.5 text-xs"
-            data-testid="undo-toast"
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-4 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border border-line-2 bg-panel-2 px-3.5 py-2.5 md:mx-5"
+          data-testid="undo-toast"
+        >
+          <span className="min-w-[140px] flex-1 text-[12.5px] text-ink">已删除「{undoable.label}」</span>
+          <button
+            onClick={() => {
+              onRestore(undoable);
+              setUndoable(null);
+            }}
+            className={BTN_ACCENT}
+            data-testid="undo-button"
           >
-            <span className="flex-1 text-app">已删除「{undoable.label}」</span>
-            <button
-              onClick={() => { onRestore(undoable); setUndoable(null); }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover transition-colors cursor-pointer"
-              data-testid="undo-button"
-            >
-              <Undo2 className="w-3 h-3" aria-hidden="true" />
-              撤销
-            </button>
-            <button
-              onClick={() => setUndoable(null)}
-              aria-label="关闭撤销提示"
-              className="p-1.5 rounded-lg text-muted hover:text-app hover:bg-surface transition-colors cursor-pointer"
-            >
-              <X className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
+            恢复
+          </button>
+          <button
+            onClick={() => setUndoable(null)}
+            aria-label="关闭撤销提示"
+            className="cursor-pointer px-1.5 font-mono text-[13px] leading-none text-ink-3 transition-colors duration-200 hover:text-ink"
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* 损坏数据隔离提示 */}
       {recovery === "corrupt-v2" && (
-        <div role="alert" className="m-3 rounded-xl bg-orange-500/10 border border-orange-500/30 p-3.5 text-xs text-app">
-          本地榜单数据损坏，已隔离显示（原值未被覆盖）。
-          <button
-            onClick={onReset}
-            className="ml-2 px-2.5 py-1.5 rounded-lg bg-surface border border-app text-muted hover:text-red-500 transition-colors cursor-pointer"
-            data-testid="reset-local"
-          >
+        <div
+          role="alert"
+          className="mx-4 mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border border-dashed border-warn px-3.5 py-2.5 md:mx-5"
+        >
+          <span className="min-w-[200px] flex-1 text-[12.5px] text-ink-2">
+            本地榜单数据损坏，已隔离显示（原值未被覆盖）。
+          </span>
+          <button onClick={onReset} className={BTN_DANGER} data-testid="reset-local">
             重置本地数据
           </button>
         </div>
       )}
 
       {/* 分区一：可比排名 */}
-      <div className="p-3 md:p-3">
+      <div className="px-4 pb-4 pt-1 md:px-5">
         <SectionLabel>可比排名（同 profile · 同测量版本 · 同执行位置 · 完整结果）</SectionLabel>
         {sorted.length === 0 ? (
-          <p className="text-sm text-muted text-center py-8">
-            还没有可比较的记录——完成一次测速后会出现在这里
-          </p>
+          <div className="flex flex-col items-center gap-3 border border-dashed border-line py-12">
+            <span className="lbl-mono border border-line-2 px-2 py-1">NO DATA</span>
+            <p className="text-[13px] text-ink-3">还没有可比较的记录——完成一次测速后会出现在这里</p>
+          </div>
         ) : (
-          <ul className="space-y-2">
-              {sorted.map((e, i) => (
-                <Row
-                  key={e.id}
-                  entry={e}
-                  rank={i + 1}
-                  metric={metric}
-                  pct={max > 0 ? ((metricValue(e, metric) ?? 0) / max) * 100 : 0}
-                  best={i === 0}
-                  onRemove={handleRemove}
-                />
-              ))}
+          <ul className="border border-line-2">
+            <ColumnHeader />
+            {sorted.map((e, i) => (
+              <Row
+                key={e.id}
+                entry={e}
+                rank={i + 1}
+                metric={metric}
+                best={i === 0}
+                onRemove={handleRemove}
+              />
+            ))}
           </ul>
         )}
 
         {/* 分区二：示例数据（独立，不参与上方排名） */}
         {demos.length > 0 && (
           <>
-            <SectionLabel>
-              <Info className="w-3 h-3 inline -mt-0.5" aria-hidden="true" />
-              示例数据（独立分区，不参与可比排名）
-            </SectionLabel>
-            <ul className="space-y-2 opacity-80">
+            <SectionLabel>示例数据（独立分区，不参与可比排名）</SectionLabel>
+            <ul className="border border-line-2">
               {demos.map((e) => (
                 <Row key={e.id} entry={e} metric={metric} demo onRemove={handleRemove} />
               ))}
@@ -237,7 +252,7 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
         {legacy.length > 0 && (
           <>
             <SectionLabel>遗留数据（旧版本记录 · 无执行位置与 profile 信息 · 不可排名）</SectionLabel>
-            <ul className="space-y-2 opacity-75">
+            <ul className="border border-line-2">
               {legacy.map((e) => (
                 <Row key={e.id} entry={e} metric={metric} legacy onRemove={handleRemove} />
               ))}
@@ -245,15 +260,33 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
           </>
         )}
       </div>
+    </section>
+  );
+}
+
+function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="lbl-mono flex items-center gap-3 pb-2 pt-4">
+      <span className="min-w-0">{children}</span>
+      <span aria-hidden="true" className="h-px flex-1 bg-line" />
     </div>
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+/** 桌面列头（与条目行共用列基准；移动端隐藏，改由每个指标单元格内联 mono 小标） */
+function ColumnHeader() {
+  const lbl = "py-2 font-mono text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-3";
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted/70 px-1 pt-3 pb-1.5">
-      {children}
-    </p>
+    <div aria-hidden="true" className="hidden border-b border-line bg-panel-2 md:flex">
+      <span className="w-[3px] flex-none" />
+      <span className={`${COL_RANK} ${lbl} text-center`}>#</span>
+      <span className={`${COL_MAIN} ${lbl}`}>条目</span>
+      <span className={`${METRIC_COL.ttft} ${lbl} pr-4 text-right`}>TTFT</span>
+      <span className={`${METRIC_COL.tps} ${lbl} pr-4 text-right`}>TPS</span>
+      <span className={`${METRIC_COL.total} ${lbl} pr-4 text-right`}>TOTAL</span>
+      <span className={`${COL_TRANSPORT} ${lbl} text-center`}>来源</span>
+      <span className={COL_ACTION} />
+    </div>
   );
 }
 
@@ -271,11 +304,17 @@ function metricValue(e: LeaderboardEntryV2, m: Metric): number | null {
   return null;
 }
 
+/** 单元格文案：缺数据即「—」（不伪装）；legacy 的 TPS 沿用旧值展示 */
+function metricCellText(e: LeaderboardEntryV2, m: Metric): string {
+  if (m === "tps" && e.run?.aggregate.tps == null && !e.legacy) return "—";
+  const v = metricValue(e, m);
+  return v === null ? "—" : m === "tps" ? fmtTps(v) : fmtMs(v);
+}
+
 function Row({
   entry,
   rank,
   metric,
-  pct,
   best,
   demo,
   legacy,
@@ -284,87 +323,110 @@ function Row({
   entry: LeaderboardEntryV2;
   rank?: number;
   metric: Metric;
-  pct?: number;
   best?: boolean;
   demo?: boolean;
   legacy?: boolean;
   onRemove: (id: string) => void;
 }) {
-  const v = metricValue(entry, metric);
+  const rail = legacy ? "bg-mute" : entry.run ? STATUS_RAIL[entry.run.status] : "bg-mute";
+  const host = entry.requestUrlDisplay.replace(/^https?:\/\//, "").split("/")[0];
   const provenance = entry.run
-    ? `${entry.run.profile.id}@${entry.run.profile.version} · ${entry.run.transport}`
+    ? ` · ${entry.run.profile.id}@${entry.run.profile.version}`
     : legacy
-      ? "旧记录 · 条件未知"
+      ? " · 旧记录 · 条件未知"
       : "";
+  const dim = legacy;
+
   return (
-    <li
-      className="anim-fade-up relative bg-surface-2 rounded-xl overflow-hidden border border-app hover:border-strong transition-colors"
-    >
-      {pct !== undefined && pct > 0 && (
-        <div
-          aria-hidden="true"
-          className="absolute left-0 top-0 bottom-0 transition-[width] duration-500 ease-out"
-          style={{
-            width: `${pct}%`,
-            background: best
-              ? "linear-gradient(90deg, var(--primary), transparent)"
-              : "linear-gradient(90deg, var(--border-strong), transparent)",
-            opacity: best ? 0.1 : 0.05,
-          }}
-        />
-      )}
-      <div className="relative p-3.5 md:grid md:grid-cols-[2.5rem_1fr_auto_2.5rem] md:items-center md:gap-3 flex items-center gap-3">
-        <div className="flex items-center justify-center w-8 shrink-0 tabular text-sm font-bold text-muted">
-          {rank ? `#${rank}` : "—"}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold text-app truncate">{entry.label || entry.model}</span>
-            {best && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary text-white font-semibold shrink-0">
-                本组最优
-              </span>
-            )}
-            {demo && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app shrink-0" style={{ color: "var(--text)" }}>
-                示例
-              </span>
-            )}
-            {legacy && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-app shrink-0" style={{ color: "var(--text)" }}>
-                遗留 · 不可排名
-              </span>
-            )}
-          </div>
-          <div className="text-[11px] truncate tabular mt-0.5" style={{ color: "var(--text)" }}>
-            {entry.model} · {entry.requestUrlDisplay.replace(/^https?:\/\//, "").split("/")[0]}
-            {provenance ? ` · ${provenance}` : ""}
-          </div>
-          {/* 三指标横排（移动端） */}
-          <div className="flex items-center gap-3 mt-1.5 md:hidden text-[11px] tabular">
-            <span className="text-muted">TTFT <span className="text-app">{fmtMs(metricValue(entry, "ttft") ?? 0)}</span></span>
-            <span className="text-muted">TPS <span className="text-app">{entry.run?.aggregate.tps == null && !legacy ? "—" : fmtTps(metricValue(entry, "tps") ?? 0)}</span></span>
-            <span className="text-muted">Total <span className="text-app">{fmtMs(metricValue(entry, "total") ?? 0)}</span></span>
-          </div>
-        </div>
-        <div className="text-right shrink-0 md:min-w-[90px]">
-          <div
-            className="tabular text-2xl font-bold leading-none"
-            style={{ color: best ? "var(--primary)" : "var(--text)" }}
+    <li className="anim-fade-in flex flex-wrap items-stretch border-b border-line transition-colors duration-150 last:border-b-0 hover:bg-panel-2">
+      {/* 左侧状态色轨 */}
+      <span aria-hidden="true" className={`w-[3px] flex-none ${rail}`} />
+      {/* 排名（mono 大数字；本组最优 = 珊瑚） */}
+      <div className={`${COL_RANK} flex items-center justify-center`}>
+        {rank ? (
+          <span
+            className={`font-mono tabular text-[15px] md:text-[17px] ${
+              best ? "font-bold text-accent" : "font-semibold text-ink-2"
+            }`}
           >
-            {v === null ? "—" : metric === "tps" ? fmtTps(v) : fmtMs(v)}
-          </div>
+            {String(rank).padStart(2, "0")}
+          </span>
+        ) : (
+          <span className="font-mono text-[13px] text-ink-3">—</span>
+        )}
+      </div>
+      {/* 主列：标签 + 模型/出处（min-width:0 + 省略） */}
+      <div className={`${COL_MAIN} flex flex-col justify-center gap-[3px] py-3 pr-3`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`truncate text-[13.5px] font-semibold ${dim ? "text-ink-2" : "text-ink"}`}>
+            {entry.label || entry.model}
+          </span>
+          {best && (
+            <span className="flex-none bg-accent px-1.5 py-[2px] font-mono text-[10px] font-semibold text-panel">
+              本组最优
+            </span>
+          )}
+          {demo && (
+            <span className="flex-none border border-line-2 px-1.5 py-[1px] font-mono text-[10px] text-ink-2">
+              示例
+            </span>
+          )}
+          {legacy && (
+            <span className="flex-none border border-dashed border-mute px-1.5 py-[1px] font-mono text-[10px] text-mute">
+              遗留·不可排名
+            </span>
+          )}
         </div>
-        <div className="flex items-center justify-center w-8 shrink-0">
-          <button
-            onClick={() => onRemove(entry.id)}
-            className="p-2.5 min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center rounded-lg text-muted hover:text-red-500 hover:bg-surface transition-colors cursor-pointer"
-            aria-label={`删除 ${entry.label || entry.model}`}
-            data-testid="remove-entry"
-          >
-            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
+        <p className="truncate font-mono text-[11px] text-ink-3">
+          {entry.model} · {host}
+          {provenance}
+        </p>
+      </div>
+      {/* 指标区：移动端折行横排（对齐主列起点）；桌面经 md:contents 提升为固定宽右对齐三列 */}
+      <div className="flex basis-full flex-wrap items-baseline gap-x-4 gap-y-1 pb-3 pl-[47px] md:contents">
+        {METRICS.map((m) => {
+          const active = metric === m.id;
+          const value = metricCellText(entry, m.id);
+          const valueCls = active
+            ? best
+              ? "font-bold text-ink"
+              : "font-semibold text-ink"
+            : dim
+              ? "text-ink-3"
+              : "text-ink-2";
+          return (
+            <div
+              key={m.id}
+              className={`${METRIC_COL[m.id]} flex flex-none items-baseline gap-1.5 self-center md:justify-end md:pr-4`}
+            >
+              <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-3 md:hidden">
+                {m.short}
+              </span>
+              <span className={`font-mono tabular text-[13px] ${valueCls}`}>{value}</span>
+            </div>
+          );
+        })}
+        {/* transport 来源徽章（mono 描边） */}
+        <div className={`${COL_TRANSPORT} flex flex-none items-center self-center md:justify-center`}>
+          {entry.run ? (
+            <span className="whitespace-nowrap border border-line-2 px-1.5 py-[1px] font-mono text-[10px] text-ink-2">
+              {TRANSPORT_SHORT[entry.run.transport]}
+            </span>
+          ) : (
+            <span className="font-mono text-[11px] text-ink-3">—</span>
+          )}
         </div>
+      </div>
+      {/* 操作：删除（mono 描边小方钮） */}
+      <div className={`${COL_ACTION} flex items-center justify-center`}>
+        <button
+          onClick={() => onRemove(entry.id)}
+          className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-line-2 bg-panel px-2 py-1 font-mono text-[10.5px] font-semibold text-ink-3 transition-colors duration-200 hover:border-bad hover:text-bad"
+          aria-label={`删除 ${entry.label || entry.model}`}
+          data-testid="remove-entry"
+        >
+          删除
+        </button>
       </div>
     </li>
   );
