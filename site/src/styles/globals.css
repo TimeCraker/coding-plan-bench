@@ -1,55 +1,60 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════
+   coding-plan-bench · Swiss Industrial Print 主题契约 v1
+   与 agent-hive（太木控制台）视觉世界同源：
+   纸感底 · 墨色层级 · 单珊瑚强调 · 零圆角 · 发丝线 · 硬阴影
+   本文件是全站样式的唯一契约源：组件只消费 token，禁止内联色值。
+   ═══════════════════════════════════════════════════════════ */
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* 字体：中文正文系统 sans；展示标题 Display 栈；数据/代号/时间一律 mono */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-disp: "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+  /* 色彩 token（Tailwind 原生 utility：text-ink / bg-panel / border-line / text-accent …） */
+  --color-paper: #f3f2ed; /* 纸感底 */
+  --color-panel: #fdfdfc; /* 面板白 */
+  --color-panel-2: #f8f7f2; /* 二级面板 */
+  --color-ink: #1a1a18; /* 油墨黑（非纯黑） */
+  --color-ink-2: #5f5d55; /* 次级墨 */
+  --color-ink-3: #9b978c; /* 三级墨 */
+  --color-line: #e4e3da; /* 发丝线 */
+  --color-line-2: #d0cfc5; /* 深发丝线 */
+  --color-accent: #a8513c; /* 珊瑚强调——唯一强调色（TimeCraker 主站色板同源） */
+  --color-accent-deep: #8f4230;
+  --color-ok: #2e7d46; /* 语义绿：成功/完整 */
+  --color-run: #2d5a88; /* 语义蓝：进行中 */
+  --color-warn: #a8761a; /* 语义琥珀：待定/部分 */
+  --color-bad: #c4341d; /* 语义红：失败 */
+  --color-mute: #8a8f98; /* 语义灰：取消/停用 */
 }
 
-/* ── 高级视觉系统：亮/暗双主题 ── */
 :root {
-  --bg: #fafbfc;
-  --bg-grad: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.08), transparent),
-             radial-gradient(ellipse 60% 40% at 90% 10%, rgba(249, 115, 22, 0.05), transparent);
-  --surface: #ffffff;
-  --surface-glass: rgba(255, 255, 255, 0.72);
-  --surface-2: #f4f6f9;
-  --text: #0a0e1a;
-  --text-muted: #3f4857;
-  --border: #e8ecf2;
-  --border-strong: #d1d8e3;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-soft: #eff4ff;
-  --cta: #f97316;
-  --success: #10b981;
-  --shadow-sm: 0 1px 2px rgba(10, 14, 26, 0.04), 0 1px 3px rgba(10, 14, 26, 0.06);
-  --shadow-md: 0 4px 12px rgba(10, 14, 26, 0.06), 0 2px 4px rgba(10, 14, 26, 0.04);
-  --shadow-lg: 0 20px 50px -12px rgba(10, 14, 26, 0.12), 0 8px 24px -8px rgba(10, 14, 26, 0.08);
-  --shadow-glow: 0 0 0 1px rgba(37, 99, 235, 0.1), 0 8px 30px -6px rgba(37, 99, 235, 0.18);
+  /* 旧令牌别名（迁移期兼容：既有 utility 名继续编译，值全部指向 Swiss token） */
+  --bg: #f3f2ed;
+  --bg-grad: none;
+  --surface: #fdfdfc;
+  --surface-glass: #fdfdfc;
+  --surface-2: #f8f7f2;
+  --text: #1a1a18;
+  --text-muted: #5f5d55;
+  --border: #e4e3da;
+  --border-strong: #d0cfc5;
+  --primary: #a8513c;
+  --primary-hover: #8f4230;
+  --primary-soft: rgba(168, 81, 60, 0.09);
+  --cta: #a8513c;
+  --success: #2e7d46;
+  /* 硬阴影（offset print 阴影，无 blur 无发光） */
+  --shadow-sm: 2px 2px 0 rgba(26, 26, 24, 0.05);
+  --shadow-md: 3px 3px 0 rgba(26, 26, 24, 0.06);
+  --shadow-lg: 4px 4px 0 rgba(26, 26, 24, 0.09);
+  --shadow-glow: 3px 3px 0 rgba(26, 26, 24, 0.06);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --r: 0px;
   color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  --bg: #07090f;
-  --bg-grad: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59, 130, 246, 0.12), transparent),
-             radial-gradient(ellipse 60% 40% at 90% 10%, rgba(249, 115, 22, 0.06), transparent);
-  --surface: #0f131c;
-  --surface-glass: rgba(15, 19, 28, 0.72);
-  --surface-2: #161b26;
-  --text: #e8ecf4;
-  --text-muted: #a3adbf;
-  --border: #1e2533;
-  --border-strong: #2a3344;
-  --primary: #4f8ef7;
-  --primary-hover: #6ba0fa;
-  --primary-soft: #131c2e;
-  --cta: #fb923c;
-  --success: #34d399;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 0 1px rgba(79, 142, 247, 0.15), 0 8px 30px -6px rgba(79, 142, 247, 0.25);
-  color-scheme: dark;
 }
 
 @layer base {
@@ -59,11 +64,11 @@
   }
   body {
     background-color: var(--bg);
-    background-image: var(--bg-grad);
-    background-attachment: fixed;
+    /* 极淡点阵纸纹——与 agent-hive 同款 */
+    background-image: radial-gradient(rgba(26, 26, 24, 0.032) 1px, transparent 1px);
+    background-size: 26px 26px;
     color: var(--text);
     font-family: var(--font-sans);
-    transition: background-color 0.4s ease, color 0.4s ease;
     letter-spacing: -0.01em;
   }
   .tabular {
@@ -72,18 +77,31 @@
     letter-spacing: -0.02em;
   }
   ::selection {
-    background: var(--primary);
-    color: #fff;
+    background: var(--text);
+    color: var(--bg);
   }
   /* 滚动条 */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--bg); }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 0;
+    border: 2px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -93,11 +111,10 @@
 
 /* ── 无障碍基线 ── */
 @layer base {
-  /* 键盘焦点环：全局可见、与主题一致（不依赖 :focus 的鼠标样式） */
+  /* 键盘焦点环：全局可见、珊瑚色 */
   :focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
-    border-radius: 6px;
   }
   /* 触控目标：交互控件最小 44×44 CSS px（移动端；桌面保持紧凑） */
   @media (max-width: 767px) {
@@ -120,58 +137,135 @@
   }
 }
 
-/* ── 入场/循环动画（替代 framer-motion 的 CSS 实现；reduced-motion 由上方全局覆盖停用） ── */
+/* ── 入场动画（150–300ms，只动 transform/opacity；reduced-motion 全局停用） ── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-@keyframes drift-a {
-  from { transform: translate(0, 0); }
-  to { transform: translate(80px, 40px); }
-}
-@keyframes drift-b {
-  from { transform: translate(0, 0); }
-  to { transform: translate(-60px, 60px); }
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 @layer utilities {
-  .bg-app { background-color: var(--bg); }
-  .bg-surface { background-color: var(--surface); }
-  .bg-surface-2 { background-color: var(--surface-2); }
-  .bg-glass { background-color: var(--surface-glass); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); }
-  .text-app { color: var(--text); }
-  .text-muted { color: var(--text-muted); }
-  .border-app { border-color: var(--border); }
-  .border-strong { border-color: var(--border-strong); }
-  .text-primary { color: var(--primary); }
-  .bg-primary { background-color: var(--primary); }
-  .bg-primary-soft { background-color: var(--primary-soft); }
-  .text-cta { color: var(--cta); }
-  .text-success { color: var(--success); }
-  .shadow-sm-card { box-shadow: var(--shadow-sm); }
-  .shadow-md-card { box-shadow: var(--shadow-md); }
-  .shadow-lg-card { box-shadow: var(--shadow-lg); }
-  .shadow-glow-card { box-shadow: var(--shadow-glow); }
-  .gradient-text {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--cta) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* ── 迁移期兼容（旧类名 → Swiss 值；组件重构后应改用下方原生 token 类） ── */
+  .bg-app {
+    background-color: var(--bg);
   }
-  .anim-fade-up { animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .anim-fade-in { animation: fade-in 0.3s ease-out both; }
-  .bg-drift-a { animation: drift-a 20s ease-in-out infinite alternate; }
-  .bg-drift-b { animation: drift-b 25s ease-in-out infinite alternate; }
-  .grid-bg {
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 70%);
-    mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, #000 30%, transparent 70%);
+  .bg-surface {
+    background-color: var(--surface);
+  }
+  .bg-surface-2 {
+    background-color: var(--surface-2);
+  }
+  /* 玻璃拟态已废除：等价实底面板 */
+  .bg-glass {
+    background-color: var(--surface);
+  }
+  .text-app {
+    color: var(--text);
+  }
+  .text-muted {
+    color: var(--text-muted);
+  }
+  .border-app {
+    border-color: var(--border);
+  }
+  .border-strong {
+    border-color: var(--border-strong);
+  }
+  .text-primary {
+    color: var(--primary);
+  }
+  .bg-primary {
+    background-color: var(--primary);
+  }
+  .bg-primary-soft {
+    background-color: var(--primary-soft);
+  }
+  .text-cta {
+    color: var(--cta);
+  }
+  .text-success {
+    color: var(--success);
+  }
+  .shadow-sm-card {
+    box-shadow: var(--shadow-sm);
+  }
+  .shadow-md-card {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-lg-card {
+    box-shadow: var(--shadow-lg);
+  }
+  .shadow-glow-card {
+    box-shadow: var(--shadow-glow);
+  }
+  /* 渐变文字已废除：等价纯墨 */
+  .gradient-text {
+    color: var(--text);
+  }
+  .anim-fade-up {
+    animation: fade-up 0.25s var(--ease) both;
+  }
+  .anim-fade-in {
+    animation: fade-in 0.2s var(--ease) both;
+  }
+
+  /* ── Swiss 原生 token utility（重构后的组件优先使用） ── */
+  .font-disp {
+    font-family: var(--font-disp);
+  }
+  .hard-shadow {
+    box-shadow: 3px 3px 0 rgba(26, 26, 24, 0.06);
+  }
+  .hard-shadow-lg {
+    box-shadow: 4px 4px 0 rgba(26, 26, 24, 0.09);
+  }
+  .border-ink {
+    border-color: var(--color-ink);
+  }
+  /* mono 小标签（eyebrow/section 标题）：大写 + 宽字距 */
+  .lbl-mono {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  /* 状态点（几何标记替代图标库） */
+  .st-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 0;
+    flex: 0 0 auto;
+  }
+  /* 实时脉冲点（进行中信号） */
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
