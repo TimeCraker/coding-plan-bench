@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import type { Protocol } from "../../../engine/types";
-import { MODEL_MATRIX } from "../../../engine/models";
+import { MODEL_MATRIX, type ModelTarget } from "../../../engine/models";
 import { URL_EXAMPLES, URL_FIELD_HINT } from "../content/copy";
 
 export interface FormValues {
@@ -32,6 +32,22 @@ export function fullRequestUrl(endpoint: string, protocol: Protocol): string {
     ? `${base}/v1/messages`
     : `${base}/v1/chat/completions`;
 }
+
+/** 渠道分组（EYE2 P1-6）：MODEL_MATRIX 无结构化渠道字段，按 name 首词归组；
+ *  「百度」别名归入「百度千帆」（同 qianfan 端点）。新渠道若首词有别称，在此加一行。 */
+const VENDOR_ALIAS: Record<string, string> = { 百度: "百度千帆" };
+
+const PRESET_GROUPS: Array<[vendor: string, models: ModelTarget[]]> = (() => {
+  const map = new Map<string, ModelTarget[]>();
+  for (const m of MODEL_MATRIX) {
+    const first = m.name.split(" ")[0] ?? m.name;
+    const vendor = VENDOR_ALIAS[first] ?? first;
+    const list = map.get(vendor);
+    if (list) list.push(m);
+    else map.set(vendor, [m]);
+  }
+  return [...map.entries()];
+})();
 
 export function BenchForm({ onRun, busy }: Props) {
   const [v, setV] = useState<FormValues>({
@@ -96,45 +112,60 @@ export function BenchForm({ onRun, busy }: Props) {
       <div className="p-5 md:p-6 space-y-6">
         {/* 模型矩阵快选（预填完整 Request URL；key 永不预填） */}
         <section className="space-y-3">
-          <SecHead num="01" tag="MODEL PRESET" sub="快选 · 点击预填 URL 与模型，Key 不预填" />
-          <div className="flex flex-wrap items-center gap-1.5">
-            {MODEL_MATRIX.map((m) => {
-              const active = v.model === m.model;
-              // chip 双色制（EYE P2-2）：渠道名（ink-3）+ 模型名（ink/选中珊瑚）按首个空格拆分
-              const sp = m.name.indexOf(" ");
-              const provider = sp > 0 ? m.name.slice(0, sp) : "";
-              const model = sp > 0 ? m.name.slice(sp + 1) : m.name;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  title={m.note ?? `预填 ${m.model}`}
-                  onClick={() =>
-                    setV((p) => ({
-                      ...p,
-                      label: m.name,
-                      requestUrl: fullRequestUrl(m.endpoint, m.protocol),
-                      model: m.model,
-                      protocol: m.protocol,
-                    }))
-                  }
-                  className={`group inline-flex items-baseline px-2.5 py-1 font-mono text-[11px] border transition-colors duration-150 ease-(--ease) cursor-pointer ${
-                    active
-                      ? "border-[1.5px] border-accent bg-accent/10"
-                      : "border border-line-2 bg-panel hover:bg-ink hover:border-ink"
-                  }`}
+          <SecHead num="01" tag="MODEL PRESET" sub="点击预填，Key 不预填" />
+          {/* 分组制（EYE2 P1-6）：组名 10px mono 上标锚点 + 组内 chips；组名信息已内嵌 chip 双色首段，读屏走 chip 全名 */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {PRESET_GROUPS.map(([vendor, models]) => (
+              <div key={vendor} className="flex flex-col gap-1.5 min-w-0">
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[10px] tracking-[0.14em] text-ink-3"
                 >
-                  {provider && (
-                    <span className="text-ink-3 group-hover:text-paper/70">{provider} </span>
-                  )}
-                  <span
-                    className={`${active ? "text-accent" : "text-ink group-hover:text-paper"}`}
-                  >
-                    {model}
-                  </span>
-                </button>
-              );
-            })}
+                  {vendor}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {models.map((m) => {
+                    const active = v.model === m.model;
+                    // chip 双色制（EYE P2-2）：渠道名（ink-3）+ 模型名（ink/选中珊瑚）按首个空格拆分
+                    const sp = m.name.indexOf(" ");
+                    const provider = sp > 0 ? m.name.slice(0, sp) : "";
+                    const model = sp > 0 ? m.name.slice(sp + 1) : m.name;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        title={m.note ?? `预填 ${m.model}`}
+                        onClick={() =>
+                          setV((p) => ({
+                            ...p,
+                            label: m.name,
+                            requestUrl: fullRequestUrl(m.endpoint, m.protocol),
+                            model: m.model,
+                            protocol: m.protocol,
+                          }))
+                        }
+                        className={`group inline-flex items-baseline px-2.5 py-1 font-mono text-[11px] border transition-colors duration-150 ease-(--ease) cursor-pointer ${
+                          active
+                            ? "border-[1.5px] border-accent bg-accent/10"
+                            : "border border-line-2 bg-panel hover:bg-ink hover:border-ink"
+                        }`}
+                      >
+                        {provider && (
+                          <span className="text-ink-3 group-hover:text-paper/70">
+                            {provider}{" "}
+                          </span>
+                        )}
+                        <span
+                          className={`${active ? "text-accent" : "text-ink group-hover:text-paper"}`}
+                        >
+                          {model}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -171,7 +202,7 @@ export function BenchForm({ onRun, busy }: Props) {
           </Field>
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-4">
-            <Field label="API Key" hint="仅本次测速；去向见上方执行位置">
+            <Field label="API Key" hint="只用于这一次测速">
               <div className="relative">
                 <input
                   type={showKey ? "text" : "password"}
@@ -235,9 +266,7 @@ export function BenchForm({ onRun, busy }: Props) {
             )}
           </button>
           {incomplete && (
-            <p className="border-l-2 border-bad pl-2.5 text-xs text-bad">
-              Request URL / API Key / Model 为必填
-            </p>
+            <p className="border-l-2 border-bad pl-2.5 text-xs text-bad">填完整再开测</p>
           )}
         </div>
       </div>

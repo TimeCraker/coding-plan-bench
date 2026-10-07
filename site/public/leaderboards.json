@@ -1,20 +1,20 @@
 {
   "meta": {
     "updatedAt": "2026-10-06",
-    "indexVersion": "主区=Artificial Analysis Intelligence Index 现行口径（artificialanalysis.ai 排行榜 2026-10-06 全量抓取，259 行）· Agent 主区=GDPval-AA v2.1（官方 Opus 5.5 文章）· 存量区=AAII v4.1 / GDPval-AA v2（2026-08-05 版数据，旧模型已下 AA 在测榜，分数保留原口径不与主区混读）· AA 已下榜旧模型归入各榜尾部「v4.1 存量区」，note 附 Epoch AI 综合智力（CC-BY 4.0）作跨期参考",
+    "indexVersion": "主区=Artificial Analysis Intelligence Index 现行口径（artificialanalysis.ai 排行榜 2026-10-06 全量抓取，259 行）· Agent 主区=GDPval-AA v2.1（官方 Opus 5.5 文章）· 存置区=AAII v4.1 / GDPval-AA v2（2026-08-05 版数据，旧模型已下 AA 在测榜，分数保留原口径不与主区混读）· AA 已下榜旧模型归入各榜尾部「v4.1 存置区」，note 附 Epoch AI 综合智力（CC-BY 4.0）作跨期参考",
     "sources": [
       "Artificial Analysis 排行榜（SSR 全量）· artificialanalysis.ai/leaderboards/models · 2026-10-06 抓取",
       "Artificial Analysis 官方文章 Claude Opus 5.5 · artificialanalysis.ai/articles/claude-opus-5-5（GDPval-AA v2.1 Elo 1846 + 对 Fable 5.1/Opus 5 差值）",
-      "Artificial Analysis Intelligence Index v4.1（存量区旧分，2026-08-05 版）",
-      "GDPval-AA v2 Elo · BenchLM 2026-08-04 快照（存量区旧分）",
+      "Artificial Analysis Intelligence Index v4.1（存置区旧分，2026-08-05 版）",
+      "GDPval-AA v2 Elo · BenchLM 2026-08-04 快照（存置区旧分）",
       "Epoch AI 综合智力（CC-BY 4.0）· 经 B 站 AI 模型世界文本榜转录（v22787，2026-10-05 抓取）",
       "各平台官方定价页（2026-10-05 二次核验：智谱 / DeepSeek / Kimi / 百度千帆 / 火山方舟 / OpenAI / Anthropic）"
     ],
-    "note": "行业参考数据，非本机实测。2026-10-06 重构：智能/性价比榜主区已换 AA 现行口径（Opus 5.5 以 58 分登顶），Agent 主区换 GDPval-AA v2.1；旧模型（Opus 5 / GPT-5.6 系 / GLM-5.2 等）已被 AA 移出在测榜，其 v4.1 旧分归入尾部存量区、note 附 Epoch 综合智力衔接两期，不与主区分数直接比较。Agent 榜无 v2.1 数据的新模型移入 watchlist 观察区、不占排名。B 站与官方冲突处（如 GLM-5.3-Prime 仅 B 站有、智谱官方无此模型）一律以官方为准、未收录。"
+    "note": "行业参考数据，非本机实测。2026-10-06 重构：智能/性价比榜主区已换 AA 现行口径（Opus 5.5 以 58 分登顶），Agent 主区换 GDPval-AA v2.1；旧模型（Opus 5 / GPT-5.6 系 / GLM-5.2 等）已被 AA 移出在测榜，其 v4.1 旧分归入尾部存置区、note 附 Epoch 综合智力衔接两期，不与主区分数直接比较。Agent 榜无 v2.1 数据的新模型移入 watchlist 观察区、不占排名。B 站与官方冲突处（如 GLM-5.3-Prime 仅 B 站有、智谱官方无此模型）一律以官方为准、未收录。"
   },
   "intelligence": {
     "title": "综合智能榜",
-    "subtitle": "AA Intelligence Index 现行口径 · rank 1-23 · 尾部 v4.1 存量区（旧模型已下 AA 在测榜）",
+    "subtitle": "AA Intelligence Index 现行口径 · rank 1-23 · 尾部 v4.1 存置区（旧模型已下 AA 在测榜）",
     "unit": "分",
     "higherBetter": true,
     "items": [
@@ -58,13 +58,13 @@
   },
   "agent": {
     "title": "Agent 综合能力榜",
-    "subtitle": "GDPval-AA v2.1 Elo（rank 1-3）· 尾部 v2 存量区 · watchlist 为无分观察区不占排名",
+    "subtitle": "GDPval-AA v2.1 Elo（rank 1-3）· 尾部 v2 存置区 · watchlist 为无分观察区不占排名",
     "unit": "Elo",
     "higherBetter": true,
     "items": [
       { "rank": 1, "name": "Claude Opus 5.5", "vendor": "Anthropic", "type": "闭源", "score": 1846, "note": "GDPval-AA v2.1 · AA 官方文章原文 · 9/22 发布即 Agent 榜首 · Terminal-Bench 4.0 59.6%" },
       { "rank": 2, "name": "Claude Fable 5.1", "vendor": "Anthropic", "type": "闭源", "score": 1735, "note": "GDPval-AA v2.1 = 1846 − 111（官方文章给出对 Opus 5.5 差值推算）· AA-Briefcase v1.1 分析质量仅次于 Opus 5.5" },
-      { "rank": 3, "name": "Claude Opus 5", "vendor": "Anthropic", "type": "闭源", "score": 1708, "note": "GDPval-AA v2.1 = 1846 − 138（官方差值推算）· 上代王者 · v2 口径原分 1862 见存量区同名条目口径说明" },
+      { "rank": 3, "name": "Claude Opus 5", "vendor": "Anthropic", "type": "闭源", "score": 1708, "note": "GDPval-AA v2.1 = 1846 − 138（官方差值推算）· 上代王者 · v2 口径原分 1862 见存置区同名条目口径说明" },
       { "rank": 4, "section": "legacy-gdpval-v2", "name": "Claude Fable 5", "vendor": "Anthropic", "type": "闭源", "score": 1760, "note": "GDPval v2 存量分（8/4 快照，口径低于 v2.1 区，不与前三名直接比较）" },
       { "rank": 5, "section": "legacy-gdpval-v2", "name": "GPT-5.6 Sol", "vendor": "OpenAI", "type": "闭源", "score": 1748, "note": "GDPval v2 存量分 · Terminal-Bench 2.1 91.9%(Ultra)" },
       { "rank": 6, "section": "legacy-gdpval-v2", "name": "Kimi K3", "vendor": "Moonshot AI", "type": "开源", "score": 1668, "note": "GDPval v2 存量分 · 开源 Agent 第一" },
@@ -86,7 +86,7 @@
   },
   "value": {
     "title": "性价比榜",
-    "subtitle": "AA 官方单任务成本（Cost per Task USD）· 越低越省钱 · 气泡大小=智能分 · 尾部 v4.1 时代存量区",
+    "subtitle": "AA 官方单任务成本（Cost per Task USD）· 越低越省钱 · 气泡大小=智能分 · 尾部 v4.1 时代存置区",
     "unit": "$/任务",
     "higherBetter": false,
     "items": [

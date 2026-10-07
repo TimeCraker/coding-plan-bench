@@ -16,11 +16,7 @@ import { Leaderboard } from "./components/Leaderboard";
 import { GlobalLeaderboard } from "./components/GlobalLeaderboard";
 import { Masthead, type View } from "./components/Sidebar";
 import { Methodology } from "./components/Methodology";
-import {
-  APP_SUBTITLE,
-  APP_TITLE,
-  FOOTER_BENCH,
-} from "./content/copy";
+import { APP_SUBTITLE, APP_TITLE } from "./content/copy";
 import {
   clearLeaderboard,
   loadLeaderboard,
@@ -96,18 +92,17 @@ export default function App() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // hero 文案与版面记号（display 级标题 + hairline 规线行，随 view 切换）
+  // hero 文案与版面记号（display 级标题 + hairline 规线行，随 view 切换）；
+  // 口径句已在副标题说清，meta 行只留页码记号（EYE2 P2-14 去重）
   const heroConfig = {
     bench: {
       title: APP_TITLE,
       desc: APP_SUBTITLE,
-      meta: "TTFT · TPS · TOTAL — 同条件三指标对比",
       mark: "BENCH — 01",
     },
     global: {
-      title: "全球模型能力与套餐参考",
-      desc: "综合智能、Agent 能力、性价比与订阅制套餐横向对比（行业参考数据，非本机实测）。测速请切回「测速台」。",
-      meta: "IQ · AG · VAL · PLN — 行业参考 · 非本机实测",
+      title: "全球模型榜",
+      desc: "全世界模型谁强、谁划算——行业参考数据，不是本机实测。想测自己的，切回「测速台」。",
       mark: "GLOBAL — 02",
     },
   }[view];
@@ -118,7 +113,8 @@ export default function App() {
 
       {/* 主体单列 wrap：max 1240 / 桌面 36px · 移动 16px 水平留白（对齐 agent-hive .wrap） */}
       <div className="mx-auto w-full max-w-[1240px] px-4 pb-14 md:px-9">
-        <SecurityBanner />
+        {/* 安全横幅只在测速台语境渲染（EYE2 P2-13）：能力榜不看连接方式 */}
+        <SecurityBanner active={view === "bench"} />
 
         {/* 版面头部（display 级大标题即首屏视觉锚 + hairline 规线收尾，与首面板形成整体） */}
         <section className="pt-8 pb-5">
@@ -129,10 +125,9 @@ export default function App() {
             <p className="mt-3 max-w-[60ch] text-[15px] leading-[1.6] text-ink-2 md:text-base">
               {heroConfig.desc}
             </p>
-            {/* 印刷版面记号行：左指标口径 / 右视图页码（随 view 切换） */}
-            <div className="mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 border-t border-line pt-2.5">
-              <span className="lbl-mono">{heroConfig.meta}</span>
-              <span className="lbl-mono ml-auto whitespace-nowrap">{heroConfig.mark}</span>
+            {/* 印刷版面记号行：右对齐视图页码（口径句并入副标题，不再重复） */}
+            <div className="mt-5 flex flex-wrap items-baseline justify-end gap-x-4 gap-y-1.5 border-t border-line pt-2.5">
+              <span className="lbl-mono whitespace-nowrap">{heroConfig.mark}</span>
             </div>
           </div>
         </section>
@@ -191,17 +186,15 @@ export default function App() {
             </div>
           )}
 
-          {/* colophon（印刷版权页制式）：hairline 顶边 + 制式记号行 + 口径说明行 */}
+          {/* colophon（印刷版权页制式）：hairline 顶边 + 单行制式记号（左制式 / 右视图口径收尾）。
+              免责只此一行收尾——bench「本地存储」、global「非本机实测」，首次告知在 hero desc（EYE2 P1-5） */}
           <footer className="mt-10 border-t border-line pt-3 pb-2">
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
               <span className="lbl-mono">CPB · SWISS INDUSTRIAL PRINT · PROFILE CPB-STANDARD@1</span>
-              <span className="lbl-mono ml-auto whitespace-nowrap">数据仅存浏览器本地 · MMXXVI</span>
+              <span className="lbl-mono ml-auto whitespace-nowrap">
+                {view === "bench" ? "数据仅存浏览器本地 · MMXXVI" : "行业参考 · 非本机实测 · MMXXVI"}
+              </span>
             </div>
-            <p className="mt-2 border-t border-line pt-2 font-mono text-[10.5px] leading-[1.7] text-ink-3">
-              {view === "bench"
-                ? FOOTER_BENCH
-                : "能力榜为行业参考数据（Artificial Analysis 等），非本机实测"}
-            </p>
           </footer>
         </main>
       </div>

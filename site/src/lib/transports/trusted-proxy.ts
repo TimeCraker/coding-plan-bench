@@ -58,7 +58,7 @@ export function createTrustedProxyTransport(opts: {
       if (!opts.consent) {
         throw benchError(
           "consent",
-          "使用项目代理需要当次明确同意（Key 将经项目 Worker 内存转发）",
+          "走中转需要你先确认（Key 将经我们的转发器，不存盘）",
         );
       }
       const res = await fetchImpl(`${apiBase}/bench`, {

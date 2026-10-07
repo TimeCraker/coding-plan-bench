@@ -33,9 +33,9 @@ test.describe("copy and provenance", () => {
     const section = page.getByTestId("transport-selector");
     await expect(section).toBeVisible();
     await expect(section).toContainText("浏览器直连");
-    await expect(section).toContainText("项目代理");
-    // Key 路径实质说明（browser-direct：不经项目服务器）
-    await expect(section).toContainText("不经项目服务器");
+    await expect(section).toContainText("中转代理");
+    // Key 路径实质说明（browser-direct：不经过项目服务器）
+    await expect(section).toContainText("不经过我们的任何服务器");
     // 页面提到本地版（tauri-local 的存在性与下载入口）
     await expect(page.locator("body")).toContainText("本地");
   });
@@ -92,6 +92,7 @@ test.describe("copy and provenance", () => {
     expect(text).toContain("TPS");
     // 术语码在方法学制式中大写渲染（TOTAL），锚语义不锚字形
     expect(text.toLowerCase()).toContain("total");
-    expect(text).toContain("中位数");
+    // 「取中位」锚 TPS 中位数口径的存在（wave17 文案白话化后表述）
+    expect(text).toContain("中位");
   });
 });

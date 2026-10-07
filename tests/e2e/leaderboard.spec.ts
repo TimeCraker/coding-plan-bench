@@ -34,7 +34,7 @@ test.describe("comparable leaderboard", () => {
     const board = page.getByTestId("leaderboard");
     await expect(board).toBeVisible();
     // 示例分区标题明确
-    await expect(board).toContainText("示例数据（独立分区，不参与可比排名）");
+    await expect(board).toContainText("示例 · 不参与排名");
     // demo 行带示例徽章
     await expect(board.locator("[data-testid='remove-entry']").first()).toBeVisible();
     // 可比排名区为空提示
@@ -98,7 +98,7 @@ test.describe("comparable leaderboard", () => {
     });
     await page.goto("/");
     const board = page.getByTestId("leaderboard");
-    await expect(board).toContainText("遗留数据（旧版本记录");
+    await expect(board).toContainText("旧版记录");
     await expect(board).toContainText("智谱 GLM-5.2");
     await expect(board).toContainText("不可排名");
     // v1 备份已写入（幂等迁移证据）
@@ -112,20 +112,20 @@ test.describe("comparable leaderboard", () => {
   test("清空需要稳定确认：取消保留 / 确认清空", async ({ page }) => {
     await page.goto("/");
     const board = page.getByTestId("leaderboard");
-    await expect(board).toContainText("示例数据（独立分区");
+    await expect(board).toContainText("示例 · 不参与排名");
 
     await page.getByTestId("clear-all").click();
     const no = page.getByTestId("confirm-clear-no");
     await expect(no).toBeVisible();
     await no.click();
     // 取消：数据仍在
-    await expect(board).toContainText("示例数据（独立分区");
+    await expect(board).toContainText("示例 · 不参与排名");
 
     await page.getByTestId("clear-all").click();
     await page.getByTestId("confirm-clear-yes").click();
     // 确认：示例分区清空（榜单整体为空态）
     await expect(board).toContainText("还没有可比较的记录");
-    await expect(board).not.toContainText("示例数据（独立分区");
+    await expect(board).not.toContainText("示例 · 不参与排名");
   });
 
   test("删除示例条目可撤销恢复", async ({ page }) => {

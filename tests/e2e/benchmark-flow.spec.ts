@@ -69,13 +69,13 @@ test.describe("transport consent", () => {
 
     await page.goto("/");
     await fillForm(page);
-    await page.getByRole("radio", { name: /项目代理/ }).check();
+    await page.getByRole("radio", { name: /中转代理/ }).check();
     await page.getByRole("button", { name: "开始测速" }).click();
 
-    // consent 面板出现，文案包含 Key 经 Worker 内存转发的实质说明
+    // consent 面板出现，文案包含「不存盘」的实质说明
     const consent = page.getByTestId("proxy-consent");
     await expect(consent).toBeVisible();
-    await expect(consent).toContainText("Worker 内存转发");
+    await expect(consent).toContainText("不存盘");
 
     await page.getByRole("button", { name: "取消" }).click();
     await expect(consent).toBeHidden();
@@ -107,13 +107,13 @@ test.describe("transport consent", () => {
 
     await page.goto("/");
     await fillForm(page);
-    await page.getByRole("radio", { name: /项目代理/ }).check();
+    await page.getByRole("radio", { name: /中转代理/ }).check();
     await page.getByRole("button", { name: "开始测速" }).click();
     await page.getByTestId("proxy-consent").getByRole("button", { name: /同意/ }).click();
 
     await expect(page.getByTestId("result-card")).toBeVisible({ timeout: 15_000 });
     expect(proxyHits.length).toBe(1);
-    await expect(page.getByTestId("result-transport")).toContainText("项目代理");
+    await expect(page.getByTestId("result-transport")).toContainText("中转代理");
   });
 });
 

@@ -1,11 +1,11 @@
 // 应用壳页首（Swiss Industrial Print，对齐 agent-hive 面板骨架）：
-// masthead 品牌行（版心顶规线 + 版号戳）+ sticky 导航 tabs，桌面/移动统一为同一顶部结构
+// masthead 品牌行（版心顶规线 + 版号戳）+ sticky segmented 导航，桌面/移动统一为同一顶部结构
 // （原「玻璃侧边栏 + 移动端双导航」与主题切换已随壳层重构移除）。
 
 export type View = "bench" | "global";
 
 // tab 前几何方点保留 per-tab 语义色（测速台 = run 蓝实测语义、能力榜 = accent 珊瑚）；
-// 选中底线统一珊瑚——「选中」是全局语义，底线不做第二强调色（EYE P0 修正）
+// 选中格内方点统一转珊瑚——「选中」是全局语义（墨底上原蓝点不可辨，EYE P0 同源）
 const NAV: { id: View; label: string; dot: string }[] = [
   { id: "bench", label: "测速台", dot: "bg-run" },
   { id: "global", label: "能力榜", dot: "bg-accent" },
@@ -51,30 +51,35 @@ export function Masthead({ view, onView }: Props) {
         </div>
       </header>
 
-      {/* sticky 导航：纸底不透明（遮滚动内容）+ 2px 墨底线 + 状态色方点 tabs */}
-      <nav className="sticky top-0 z-[100] mt-5 border-b-2 border-ink bg-paper">
-        <div className="mx-auto flex w-full max-w-[1240px] overflow-x-auto px-4 md:px-9">
-          {NAV.map((n) => {
-            const active = view === n.id;
-            return (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => onView(n.id)}
-                data-active={active}
-                className={`relative inline-flex cursor-pointer items-center gap-2.5 px-5 py-3 text-[13.5px] font-semibold whitespace-nowrap transition-colors ${
-                  active ? "text-ink" : "text-ink-2 hover:text-ink"
-                }`}
-              >
-                <span className={`st-dot ${n.dot}`} aria-hidden="true" />
-                {n.label}
-                {/* 选中底线：2px 珊瑚色条压在导航墨线上（inset 定位，不依赖负 margin，横向滚动安全） */}
-                {active && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" aria-hidden="true" />
-                )}
-              </button>
-            );
-          })}
+      {/* sticky 导航：纸底不透明（遮滚动内容）+ 方框 segmented 分格——
+          墨线外框自带结构线，nav 不再另设 2px 底线（页面更简）；
+          选中格墨底纸字（方点转珊瑚 = 选中语义），未选格发丝分隔 + hover 二级面板底；
+          移动端两格等宽撑满（全局 44px 触达兜底），桌面内容自适应收缩 */}
+      <nav className="sticky top-0 z-[100] mt-5 bg-paper">
+        <div className="mx-auto w-full max-w-[1240px] px-4 py-3 md:px-9">
+          <div className="inline-flex w-full border-[1.5px] border-ink md:w-auto">
+            {NAV.map((n, i) => {
+              const active = view === n.id;
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => onView(n.id)}
+                  data-active={active}
+                  className={`flex flex-1 cursor-pointer items-center justify-center gap-2.5 px-5 py-2.5 text-[13.5px] font-semibold whitespace-nowrap transition-colors md:flex-none ${
+                    i > 0 ? "border-l border-line-2" : ""
+                  } ${
+                    active
+                      ? "bg-ink text-paper"
+                      : "bg-paper text-ink-2 hover:bg-panel-2 hover:text-ink"
+                  }`}
+                >
+                  <span className={`st-dot ${active ? "bg-accent" : n.dot}`} aria-hidden="true" />
+                  {n.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </>

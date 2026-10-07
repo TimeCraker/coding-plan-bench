@@ -25,6 +25,7 @@
   --color-line-2: #d0cfc5; /* 深发丝线 */
   --color-accent: #a8513c; /* 珊瑚强调——唯一强调色（TimeCraker 主站色板同源） */
   --color-accent-deep: #8f4230;
+  --color-accent-lift: #cc7d66; /* 墨底亮珊瑚：ink 上 5.6:1（原 accent 3.2:1 触发 axe serious）——墨底反白格内的珊瑚文本专用 */
   --color-ok: #2e7d46; /* 语义绿：成功/完整 */
   --color-run: #2d5a88; /* 语义蓝：进行中 */
   --color-warn: #a8761a; /* 语义琥珀：待定/部分 */
