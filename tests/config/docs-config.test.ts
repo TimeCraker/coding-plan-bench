@@ -45,10 +45,10 @@ describe("无旧无条件承诺", () => {
     expect(README).not.toContain("反映本机当前真实表现");
   });
 
-  it("Key 去向描述与三种 transport 一致（含浏览器直连/项目代理/本地 App）", () => {
+  it("Key 去向描述与三种 transport 一致（含浏览器直连/中转代理/本地软件）", () => {
     expect(README).toContain("浏览器直连");
-    expect(README).toContain("项目代理");
-    expect(README).toContain("本地 App");
+    expect(README).toContain("中转代理");
+    expect(README).toContain("本地软件");
     // 代理的实质披露
     expect(README).toContain("内存转发");
   });

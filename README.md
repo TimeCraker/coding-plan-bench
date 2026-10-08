@@ -1,6 +1,6 @@
 # Coding Plan Bench
 
-> 可信测速台 · 选择执行位置，测量 **TTFT / TPS / Total**，同条件榜单对比
+> 可信测速台 · 选择连接方式，测量 **TTFT / TPS / Total**，同条件榜单对比
 
 支持 Anthropic 兼容与 OpenAI 兼容双协议服务。内置 **glm-5.3 世代模型矩阵**（智谱 `glm-5.3` / `glm-5.3-flash` / `glm-5.3-flashx` 同 key 三档直对比，外加方舟 / 千帆 / DeepSeek / Kimi 渠道），表单一键快选，CLI 一条命令跑完编码用例矩阵。
 
@@ -8,17 +8,17 @@
 
 ---
 
-## 三种执行位置（Key 路径是一等公民）
+## 三种连接方式（Key 路径是一等公民）
 
-测速前先选择执行位置——它决定你的 API Key 经过哪条链路，取样次数（1/3/5）不会改变它：
+测速前先选择连接方式——它决定你的 API Key 经过哪条链路，取样次数（1/3/5）不会改变它：
 
-| 执行位置 | 请求路径 | Key 去向 | 限制 |
+| 连接方式 | 请求路径 | Key 去向 | 限制 |
 |----|------|---------|------|
 | 🌐 **浏览器直连**（默认） | 浏览器 → 模型厂商 | 只存在于浏览器内存与发往厂商的请求中，不经项目服务器 | 厂商需开放浏览器 CORS；失败时不会自动改走代理 |
-| 🔁 **项目代理**（需当次确认） | 浏览器 → 项目 Worker → 厂商 | 经项目 Worker **内存转发**，不写入应用存储；服务运营方与平台仍在传输链路 | 仅支持受信上游列表（HTTPS + host/path 精确匹配）；不追随重定向；每次使用需当次确认 |
-| 💻 **本地 App**（Windows） | 本地 App → 模型厂商 | 全程留在你的设备与厂商之间 | 无需远端代理即可完成 1/3/5 次取样与取消 |
+| 🔁 **中转代理**（需当次确认） | 浏览器 → 项目 Worker → 厂商 | 经项目 Worker **内存转发**，不写入应用存储；服务运营方与平台仍在传输链路 | 仅支持受信上游列表（HTTPS + host/path 精确匹配）；不追随重定向；每次使用需当次确认 |
+| 💻 **本地软件**（Windows） | 本地软件 → 模型厂商 | 全程留在你的设备与厂商之间 | 无需远端代理即可完成 1/3/5 次取样与取消 |
 
-榜单数据只保存在你的浏览器 localStorage（schema v2，含 profile/测量版本/transport 来源；旧数据自动迁移为"遗留·不可排名"）。跨执行位置 / profile 的结果不直接可比，默认只在同条件组内排名。
+榜单数据只保存在你的浏览器 localStorage（schema v2，含 profile/测量版本/transport 来源；旧数据自动迁移为"遗留·不可排名"）。跨连接方式 / profile 的结果不直接可比，默认只在同条件组内排名。
 
 ## 部署拓扑（Cloudflare Pages + Workers，唯一主站事实源）
 
@@ -31,9 +31,9 @@
                                  │
           ┌──────────────────────┼──────────────────────┐
           ▼                      ▼                      ▼
-   🌐 浏览器直连            ☁️ Worker 代理            💻 本地 App
+   🌐 浏览器直连            ☁️ Worker 代理            💻 本地软件
    (Cloudflare Pages 前端)  (Cloudflare Workers)      (Tauri · Windows)
-   默认执行位置             受信上游 allowlist        官方 HTTP 插件
+   默认连接方式             受信上游 allowlist        官方 HTTP 插件
                            需当次确认                 Key 不出本机
 ```
 
@@ -76,15 +76,15 @@ cp .env.example .env   # 填 ZHIPU_API_KEY；其余渠道按上表 envVar 增设
 npm run bench:matrix   # 结果写入 results/data/，报告见 results/
 ```
 
-> 项目代理目前仅放行智谱端点（allowlist 由运营方配置）；方舟 / 千帆 / DeepSeek / Kimi 渠道请走浏览器直连或本地 App。
+> 中转代理目前仅放行智谱端点（allowlist 由运营方配置）；方舟 / 千帆 / DeepSeek / Kimi 渠道请走浏览器直连或本地软件。
 
 最新一轮实测（2026-10-05，temperature=0，32/32 成功）：**GLM-5.3 端到端中位 19.9s / 89 TPS，GLM-5.3-Flash 34.7s / 64 TPS；中高难用例上两档答案质量打平**——详见 [results/2026-10-05-glm-5.3-matrix.md](results/2026-10-05-glm-5.3-matrix.md)。
 
 ## 隐私与限制
 
-- 🔑 Key 只存在于当前运行内存与你所选执行位置的请求链路；不进入 localStorage、日志、URL 或错误文本
+- 🔑 Key 只存在于当前运行内存与你所选连接方式的请求链路；不进入 localStorage、日志、URL 或错误文本
 - 🔁 公共代理不是任意转发器：仅受信 HTTPS 上游（host+path 精确 allowlist），拒绝 IP/私网/localhost/非 443 端口/重定向/超限请求，全部在发起上游请求前拦截
-- ⚠️ 已知限制：仅支持 Anthropic / OpenAI 兼容协议；代理只开放配置列表内的目标（其它服务请用浏览器直连或本地 App）；不同执行位置的网络路径不同，跨条件比较需显式切换分组
+- ⚠️ 已知限制：仅支持 Anthropic / OpenAI 兼容协议；代理只开放配置列表内的目标（其它服务请用浏览器直连或本地软件）；不同连接方式的网络路径不同，跨条件比较需显式切换分组
 
 ## 本地开发
 
@@ -111,7 +111,7 @@ npm run verify          # 发布级验收单入口：typecheck→lint→全部�
 npm run dev             # 前端开发 (http://localhost:5173)
 npm run server          # Node 后端 API (localhost:8787，可选)
 npm run bench:matrix    # CLI 模型矩阵跑分（读 env key）
-npm run tauri dev       # Tauri 本地 App 开发（需 Rust + MSVC）
+npm run tauri dev       # Tauri 本地软件 开发（需 Rust + MSVC）
 npm run tauri build     # Windows 安装包
 ```
 
@@ -131,7 +131,7 @@ node --import tsx server/node.ts
 
 ## Windows 本地版状态
 
-Tauri 2 壳 + 官方 HTTP 插件（`tauri-local` 执行位置），生产链路不访问项目 `/api`；CSP 非 null、capabilities 仅放行 HTTPS 远程目标。安装包未签名，由 [Build Windows App](https://github.com/TimeCraker/coding-plan-bench/actions/workflows/build-windows.yml) workflow 在 GitHub Windows runner 构建。实机 1/3/5 取样与取消的外部验证证据由 owner 在发布前补齐（T-012）。
+Tauri 2 壳 + 官方 HTTP 插件（`tauri-local` 连接方式），生产链路不访问项目 `/api`；CSP 非 null、capabilities 仅放行 HTTPS 远程目标。安装包未签名，由 [Build Windows App](https://github.com/TimeCraker/coding-plan-bench/actions/workflows/build-windows.yml) workflow 在 GitHub Windows runner 构建。实机 1/3/5 取样与取消的外部验证证据由 owner 在发布前补齐（T-012）。
 
 ---
 
@@ -154,10 +154,10 @@ push 到 main 只触发 CI 部署 workflow；acceptance 未通过前不发布正
 
 | 层 | 技术 | 说明 |
 |----|------|------|
-| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · 纯 CSS 动效 | 亮/暗双主题（跟随系统偏好），响应式 375–1440；framer-motion 已移除（T-011 减重，初始 JS gzip 83.5KB，`check:bundle` ≤100KB 门禁） |
+| 前端 | Vite 7 · React 19 · TypeScript 5.7 · Tailwind CSS v4 · 纯 CSS 动效 | Swiss Industrial Print 单浅色主题（纸感底/墨层级/珊瑚单强调/零圆角/硬阴影，与 agent-hive 同源），大白话文案基线；响应式 375–1440；framer-motion 与 lucide-react 已移除（初始 JS gzip 83.3KB，`check:bundle` ≤100KB 门禁） |
 | 引擎 | TypeScript（同构） | 一份代码三端复用：请求构造/SSE 解析/计量/聚合，schema v2 |
 | 后端 | Hono | 同构 Cloudflare Worker + Node（结构化 allowlist 边界） |
-| 本地 App | Tauri 2 + plugin-http | Windows，复用前端与引擎 |
+| 本地软件 | Tauri 2 + plugin-http | Windows，复用前端与引擎 |
 | CI/CD | GitHub Actions | 质量门禁 + Pages/Worker 部署 + Windows 构建 |
 
 ## 项目结构
@@ -184,7 +184,7 @@ coding-plan-bench/
 │  ├─ src/content/copy.ts   # 文案单一事实源
 │  └─ public/_headers # CSP/HSTS 等安全头
 ├─ tests/             # unit / integration / e2e / config（禁真实网络）
-├─ src-tauri/         # Tauri 本地 App（Rust 壳 + HTTP 插件）
+├─ src-tauri/         # Tauri 本地软件（Rust 壳 + HTTP 插件）
 ├─ .github/workflows/ # CI: 质量门禁 + Pages/Worker 部署 + Windows 构建
 └─ docs/ai-delivery/  # PRD / Stage Spec / Tasks / Handoff（权威输入）
 ```

@@ -1,5 +1,5 @@
 # Cloudflare Pages 安全头（Spec §4.4 / NFR-001）
-# 站点无内联脚本/样式（theme-boot 为外链；组件样式为静态 Tailwind）
+# 站点无内联脚本/样式（单浅色主题无需引导脚本；组件样式为静态 Tailwind）
 
 /*
   Content-Security-Policy: default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https:; form-action 'none'
