@@ -105,6 +105,15 @@ export const ERROR_ADVICE: Record<string, string> = {
 export const FOOTER_BENCH =
   "不同连接方式 / profile 的成绩不直接可比；数据只存在你的浏览器里。";
 
+// ── 榜单分享与趋势（wave22 功能文案）──
+export const BOARD_VIEW_LIST = "榜单";
+export const BOARD_VIEW_TREND = "趋势";
+export const BOARD_SHARE = "复制榜单";
+export const BOARD_SHARE_DONE = "已复制，去粘贴分享";
+export const TREND_TITLE = "趋势速览";
+export const TREND_EMPTY = "同一模型测 2 次以上，这里会出现它的历史曲线。";
+export const TREND_SAMPLES = "次";
+
 export const METHODOLOGY_TITLE = "方法学与口径";
 
 export const METHODOLOGY_POINTS = [

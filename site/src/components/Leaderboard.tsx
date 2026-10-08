@@ -7,7 +7,7 @@
 // - 成绩公报制式：前三名 rank 大数字（#1 珊瑚 + 底部短规线）、本组最优值珊瑚下划规线、
 //   列内单位恒定（TTFT 恒 ms / Total 恒 s，EYE P2-1）
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type {
   LeaderboardEntryV2,
   RunStatus,
@@ -19,8 +19,23 @@ import {
   rankableForMetric,
   type RankableMetric,
 } from "../lib/storage";
+import { buildBoardMarkdown, copyText } from "../lib/boardShare";
+import {
+  BOARD_SHARE,
+  BOARD_SHARE_DONE,
+  BOARD_VIEW_LIST,
+  BOARD_VIEW_TREND,
+} from "../content/copy";
+import { TrendSpark } from "./TrendSpark";
 
 type Metric = RankableMetric;
+
+/** 视图切换（wave22）：榜单 / 趋势——纯前端视图状态，不写 storage */
+type ViewKind = "list" | "trend";
+const VIEWS: { id: ViewKind; text: string }[] = [
+  { id: "list", text: BOARD_VIEW_LIST },
+  { id: "trend", text: BOARD_VIEW_TREND },
+];
 
 const METRICS: {
   id: Metric;
@@ -76,9 +91,20 @@ interface Props {
 
 export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, onReset }: Props) {
   const [metric, setMetric] = useState<Metric>("total");
+  const [view, setView] = useState<ViewKind>("list");
   const [confirmClear, setConfirmClear] = useState(false);
   const [undoable, setUndoable] = useState<LeaderboardEntryV2 | null>(null);
+  const [shareDone, setShareDone] = useState(false);
+  const shareTimer = useRef<number | null>(null);
   const cfg = METRICS.find((m) => m.id === metric)!;
+
+  /* 复制反馈计时器：卸载时清理，避免卸载后 setState */
+  useEffect(
+    () => () => {
+      if (shareTimer.current !== null) window.clearTimeout(shareTimer.current);
+    },
+    [],
+  );
 
   const rankable = entries.filter((e) => rankableForMetric(e, metric));
   const demos = entries.filter((e) => e.demo);
@@ -93,6 +119,15 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
   const handleRemove = (id: string) => {
     const { removed } = onRemove(id);
     if (removed) setUndoable(removed);
+  };
+
+  /* 复制榜单：当前可比条目 + 当前排序指标 → markdown；成功后 2.5s 反馈 */
+  const handleShare = async () => {
+    const ok = await copyText(buildBoardMarkdown(entries, metric));
+    if (!ok) return;
+    setShareDone(true);
+    if (shareTimer.current !== null) window.clearTimeout(shareTimer.current);
+    shareTimer.current = window.setTimeout(() => setShareDone(false), 2500);
   };
 
   const groupKeys = new Set(
@@ -113,6 +148,24 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
           </span>
           <span aria-hidden="true" className="h-px flex-1 bg-line-2" />
         </h2>
+        {/* 视图切换 segmented（榜单/趋势）：墨线外框 + 格间发丝分隔 + 选中格墨底反白 */}
+        <div className="flex border-[1.5px] border-ink" role="group" aria-label="榜单视图">
+          {VIEWS.map((v) => {
+            const on = view === v.id;
+            return (
+              <button
+                key={v.id}
+                aria-pressed={on}
+                onClick={() => setView(v.id)}
+                className={`flex-none border-l border-line px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide first:border-l-0 cursor-pointer transition-colors duration-200 ${
+                  on ? "bg-ink text-paper" : "bg-panel text-ink-2 hover:bg-panel-2 hover:text-ink"
+                }`}
+              >
+                {v.text}
+              </button>
+            );
+          })}
+        </div>
         {/* 计数制式：每段 = 数值（600 墨）+ 标签（ink-3），段间 mono 中点分隔 */}
         <p className="whitespace-nowrap font-mono text-[11px] tabular tracking-[0.02em] text-ink-3">
           可比 <span className="font-semibold text-ink">{rankable.length}</span> 条 · 示例{" "}
@@ -125,6 +178,19 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
             </>
           )}
         </p>
+        {/* 复制榜单（wave22）：当前可比条目 → markdown 入剪贴板；成功反馈 role=status 2.5s */}
+        {rankable.length > 0 && (
+          <span className="flex items-center gap-2">
+            {shareDone && (
+              <span role="status" data-testid="share-done" className="font-mono text-[11px] text-ok">
+                {BOARD_SHARE_DONE}
+              </span>
+            )}
+            <button onClick={handleShare} className={BTN_NEUTRAL} data-testid="share-board">
+              {BOARD_SHARE}
+            </button>
+          </span>
+        )}
         {entries.length > 0 &&
           (confirmClear ? (
             <span role="alertdialog" aria-label="确认清空榜单" className="flex items-center gap-2">
@@ -151,7 +217,9 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
       </header>
 
       {/* 排序指标 segmented：1.5px 墨线外框 + 格间发丝分隔，选中格墨底反白（与 nav 方框语言一致）；
-          排序方向（↓ 越低 / ↑ 越高）并入 active tab 后缀，箭头 aria-hidden 不改可访问名 */}
+          排序方向（↓ 越低 / ↑ 越高）并入 active tab 后缀，箭头 aria-hidden 不改可访问名。
+          趋势视图只看 TTFT 历史，排序指标仅属于榜单视图 */}
+      {view === "list" && (
       <div className="mt-3 overflow-x-auto px-4 md:px-5">
         <div className="flex w-max border-[1.5px] border-ink" role="tablist" aria-label="排序指标">
           {METRICS.map((m) => {
@@ -183,6 +251,7 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
           })}
         </div>
       </div>
+      )}
 
       {/* 恢复 toast（稳定存在直到用户处理，aria-live 播报） */}
       {undoable && (
@@ -228,7 +297,8 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
         </div>
       )}
 
-      {/* 分区一：可比排名 */}
+      {/* 主体视图切换（wave22）：榜单 = 三分区行式列表 / 趋势 = TrendSpark 火花线速览 */}
+      {view === "list" ? (
       <div className="px-4 pb-4 pt-1 md:px-5">
         <SectionLabel>可比排名 · 同条件才比</SectionLabel>
         {sorted.length === 0 ? (
@@ -284,6 +354,9 @@ export function Leaderboard({ entries, onRemove, onRestore, onClear, recovery, o
           </>
         )}
       </div>
+      ) : (
+        <TrendSpark entries={entries} />
+      )}
     </section>
   );
 }

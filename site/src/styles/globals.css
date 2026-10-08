@@ -28,9 +28,11 @@
   --color-accent-lift: #cc7d66; /* 墨底亮珊瑚：ink 上 5.6:1（原 accent 3.2:1 触发 axe serious）——墨底反白格内的珊瑚文本专用 */
   --color-ok: #2e7d46; /* 语义绿：成功/完整 */
   --color-run: #2d5a88; /* 语义蓝：进行中 */
-  --color-warn: #a8761a; /* 语义琥珀：待定/部分 */
+  --color-warn: #a8761a; /* 语义琥珀：待定/部分（图形档——色条/方点/描边） */
+  --color-warn-text: #8a6215; /* 琥珀文字安全档（panel-2 底 5.1:1 AA；小字状态章/警示行专用） */
   --color-bad: #c4341d; /* 语义红：失败 */
-  --color-mute: #8a8f98; /* 语义灰：取消/停用 */
+  --color-mute: #8a8f98; /* 语义灰：取消/停用（图形档） */
+  --color-mute-text: #5f6369; /* 灰文字安全档（panel-2 底 5.6:1 AA） */
 }
 
 :root {
@@ -238,14 +240,13 @@
     font-family: var(--font-disp);
   }
   .hard-shadow {
-    box-shadow: 3px 3px 0 rgba(26, 26, 24, 0.06);
+    box-shadow: var(--shadow-md);
   }
   .hard-shadow-lg {
-    box-shadow: 4px 4px 0 rgba(26, 26, 24, 0.09);
+    box-shadow: var(--shadow-lg);
   }
-  .border-ink {
-    border-color: var(--color-ink);
-  }
+  /* .border-ink 手写版已删（wave22 EYE3 P1-1）：@theme 的 --color-ink 原生生成同名工具类，
+     手写版源序靠后会覆盖同元素 border-l-warn 等 longhand 类，导致语义色轨渲染成墨色 */
   /* mono 小标签（eyebrow/section 标题）：大写 + 宽字距 */
   .lbl-mono {
     font-family: var(--font-mono);

@@ -19,15 +19,15 @@ import {
 import { fmtMs, fmtTps } from "../lib/format";
 import { useCountUp } from "../lib/useCountUp";
 
-/** 运行四态 → 状态色（校对章文字/描边、方点、统计带底条共用同一语义） */
+/** 运行四态 → 状态色（校对章文字用 *-text 文字安全档保证 AA；描边/方点/底条用原色档） */
 const STATUS_TONE: Record<
   RunStatus,
   { text: string; border: string; bar: string }
 > = {
   complete: { text: "text-ok", border: "border-ok", bar: "bg-ok" },
-  partial: { text: "text-warn", border: "border-warn", bar: "bg-warn" },
+  partial: { text: "text-warn-text", border: "border-warn", bar: "bg-warn" },
   failed: { text: "text-bad", border: "border-bad", bar: "bg-bad" },
-  cancelled: { text: "text-mute", border: "border-mute", bar: "bg-mute" },
+  cancelled: { text: "text-mute-text", border: "border-mute", bar: "bg-mute" },
 };
 
 /** 运行状态 → 校对章词（mono 大写印刷记号） */
@@ -119,7 +119,7 @@ export function ResultCard({ run }: { run: BenchmarkRunResult }) {
           desc={METRIC_COPY.ttft.desc}
           note={STAT_NOTE.ttft}
           target={a.ttftMs}
-          format={(n) => fmtMs(n, "ms")}
+          format={(n) => String(Math.round(n))}
           unit={a.ttftMs !== null ? STAT_UNIT.ttft : ""}
           bar={tone.bar}
         />
@@ -137,7 +137,7 @@ export function ResultCard({ run }: { run: BenchmarkRunResult }) {
           desc={METRIC_COPY.total.desc}
           note={STAT_NOTE.total}
           target={a.totalMs}
-          format={(n) => fmtMs(n, "s")}
+          format={(n) => (n / 1000).toFixed(2)}
           unit={STAT_UNIT.total}
           bar={tone.bar}
         />
@@ -146,7 +146,7 @@ export function ResultCard({ run }: { run: BenchmarkRunResult }) {
       {/* token 来源 */}
       <p
         data-testid="result-token-source"
-        className={`px-5 md:px-6 pt-4 text-xs ${a.tps === null ? "text-warn" : "text-ink-2"}`}
+        className={`px-5 md:px-6 pt-4 text-xs ${a.tps === null ? "text-warn-text" : "text-ink-2"}`}
       >
         {TOKEN_SOURCE_COPY[a.tokenSource] ?? TOKEN_SOURCE_COPY.unavailable}
         {a.thinkingMs !== null && (

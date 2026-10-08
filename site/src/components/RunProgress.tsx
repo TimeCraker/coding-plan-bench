@@ -5,7 +5,7 @@
 // + mono 数据标签（SAMPLE 02/03 两位补零计数制式），零图标库；
 // 动效只动 transform/opacity。
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SampleResult } from "../../../engine/types";
 import {
   CONSENT_ACCEPT,
@@ -79,6 +79,53 @@ function SegmentBar({
   );
 }
 
+/** consent 面板：琥珀警示轨 + 挂载时滚动到可视区（CTA 点击后零视觉反馈的修复，尊重 reduced-motion） */
+function ConsentPanel({
+  onGrantConsent,
+  onDeclineConsent,
+}: Pick<RunProgressProps, "onGrantConsent" | "onDeclineConsent">) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+  }, []);
+  return (
+    <div
+      ref={ref}
+      data-testid="proxy-consent"
+      role="alert"
+      className="bg-panel border-[1.5px] border-ink border-l-[4px] border-l-warn hard-shadow p-5"
+    >
+      <p className="lbl-mono">CONSENT · 代理确认</p>
+      <div className="mt-2 flex items-center gap-2.5">
+        <span className="st-dot bg-warn" aria-hidden="true" />
+        <h2 className="text-[15px] font-semibold text-ink">{CONSENT_TITLE}</h2>
+      </div>
+      <p className="mt-3 text-[13px] text-ink-2 leading-relaxed">
+        {CONSENT_BODY}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2.5">
+        <button
+          type="button"
+          onClick={onGrantConsent}
+          className="h-10 px-4 inline-flex items-center justify-center bg-ink border border-ink text-paper text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:opacity-90 active:translate-y-[1px]"
+        >
+          {CONSENT_ACCEPT}
+        </button>
+        <button
+          type="button"
+          onClick={onDeclineConsent}
+          className="h-10 px-4 inline-flex items-center justify-center bg-panel border border-ink text-ink text-sm font-medium cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:bg-ink hover:text-paper active:translate-y-[1px]"
+        >
+          {CONSENT_DECLINE}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function RunProgress({
   phase,
   progress,
@@ -88,43 +135,17 @@ export function RunProgress({
 }: RunProgressProps) {
   if (phase === "consent-required") {
     return (
-      <div
-        data-testid="proxy-consent"
-        role="alert"
-        className="bg-panel border-[1.5px] border-ink border-l-[4px] border-l-warn hard-shadow p-5"
-      >
-        <p className="lbl-mono">CONSENT · 代理确认</p>
-        <div className="mt-2 flex items-center gap-2.5">
-          <span className="st-dot bg-warn" aria-hidden="true" />
-          <h2 className="text-[15px] font-semibold text-ink">{CONSENT_TITLE}</h2>
-        </div>
-        <p className="mt-3 text-[13px] text-ink-2 leading-relaxed">
-          {CONSENT_BODY}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2.5">
-          <button
-            type="button"
-            onClick={onGrantConsent}
-            className="h-10 px-4 inline-flex items-center justify-center bg-ink border border-ink text-paper text-sm font-semibold cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:opacity-90 active:translate-y-[1px]"
-          >
-            {CONSENT_ACCEPT}
-          </button>
-          <button
-            type="button"
-            onClick={onDeclineConsent}
-            className="h-10 px-4 inline-flex items-center justify-center bg-panel border border-ink text-ink text-sm font-medium cursor-pointer transition-[opacity,transform] duration-150 ease-[var(--ease)] hover:bg-ink hover:text-paper active:translate-y-[1px]"
-          >
-            {CONSENT_DECLINE}
-          </button>
-        </div>
-      </div>
+      <ConsentPanel onGrantConsent={onGrantConsent} onDeclineConsent={onDeclineConsent} />
     );
   }
 
   if (phase !== "running") return null;
 
   const index = progress ? progress.index : 1;
-  const totalLabel = progress ? String(progress.total) : "?";
+  const total = progress ? progress.total : 0;
+  const totalLabel = progress ? String(total) : "?";
+  // 头部显「在测序号」（index=已完成数，+1 并钳制），条右计数保持「已完成」口径——两处分工不重复
+  const inFlight = total ? Math.min(index + 1, total) : index;
 
   return (
     <div
@@ -137,7 +158,7 @@ export function RunProgress({
       <div className="flex items-center gap-3">
         <span className="pulse-dot bg-run shrink-0" aria-hidden="true" />
         <p className="lbl-mono">
-          RUNNING · SAMPLE <span className="tabular">{index}</span>/
+          RUNNING · SAMPLE <span className="tabular">{inFlight}</span>/
           <span className="tabular">{totalLabel}</span>
         </p>
         <button

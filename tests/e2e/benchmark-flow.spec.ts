@@ -137,7 +137,8 @@ test.describe("progress and cancel", () => {
 
     const progress = page.getByTestId("run-progress");
     await expect(progress).toBeVisible();
-    await expect(progress).toContainText("1/3");
+    // 样本计数制式：首样本在测时总数未知（SAMPLE 1/?），引擎首次 onProgress 后为 2/3
+    await expect(progress).toContainText(/SAMPLE 1\/\?|SAMPLE 2\/3/);
 
     await page.getByRole("button", { name: "取消" }).click();
     await expect(page.getByTestId("result-card")).toBeVisible({ timeout: 15_000 });
