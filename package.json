@@ -1,6 +1,6 @@
 {
   "name": "coding-plan-bench",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "可信测速台：三种执行位置测量 LLM TTFT/TPS/Total / Trusted benchmark with explicit transports",
   "type": "module",
