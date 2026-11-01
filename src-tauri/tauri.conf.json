@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "coding-plan-bench",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.timecraker.coding-plan-bench",
   "build": {
     "frontendDist": "../site/dist",

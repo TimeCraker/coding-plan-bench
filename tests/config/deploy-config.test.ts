@@ -1,5 +1,6 @@
 // T-010 部署配置测试（AC-012 / test:deploy-config）：
-// _headers 可解析且含必需安全头；wrangler vars 完整；构建产物携带 headers。
+// _headers 可解析且含必需安全头；wrangler vars 完整；构建产物携带 headers；
+// 三端版本号一致（package.json = tauri.conf.json = Cargo.toml，防发版漂移）。
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
@@ -93,6 +94,23 @@ describe("deploy workflows 策略", () => {
     expect(yml).toContain("--var ALLOWED_UPSTREAMS:");
     expect(yml).toContain("npm run typecheck");
     expect(yml).toContain("npm run test:security");
+  });
+});
+
+describe("版本号一致性（三端单源）", () => {
+  it("package.json / src-tauri/tauri.conf.json / src-tauri/Cargo.toml 版本一致", () => {
+    const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
+    expect(pkg.version, "package.json.version").toBeTruthy();
+
+    const tauri = JSON.parse(
+      readFileSync(path.join(ROOT, "src-tauri/tauri.conf.json"), "utf8"),
+    );
+    expect(tauri.version, "tauri.conf.json.version").toBe(pkg.version);
+
+    const cargo = readFileSync(path.join(ROOT, "src-tauri/Cargo.toml"), "utf8");
+    const cargoVersion = cargo.match(/^version = "(.+)"$/m);
+    expect(cargoVersion, "Cargo.toml 应含 version 字段").not.toBeNull();
+    expect(cargoVersion![1], "Cargo.toml version").toBe(pkg.version);
   });
 });
 
